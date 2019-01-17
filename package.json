@@ -1,0 +1,27 @@
+{
+  "name": "universal-api-v2",
+  "version": "0.0.1",
+  "description": "API to Universal App",
+  "main": "src/index.js",
+  "repository": "https://github.com/pulpfree/universal-api-v2",
+  "scripts": {
+    "lint": "eslint './src/**/*.js'",
+    "lint:fix": "eslint './src/**/*.js' --fix",
+    "test": "jest src",
+    "test:w": "jest --watch src",
+    "test:clear": "jest --clearCache",
+    "coverage": "jest --collectCoverageFrom=src/**.js --coverage src",
+    "prettier": "prettier --write './src/*.js'",
+    "fmtcode": "yarn run prettier && yarn run lint:fix",
+    "precommit-msg": "echo 'Pre-commit checks...' && exit 0",
+    "build": "babel src -d build"
+  },
+  "author": "Ron Dyck <rond@webbtech.net> (http://webbtech.net/)",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "2.389.0"
+  },
+  "devDependencies": {
+    "eslint": "5.12.0"
+  }
+}
