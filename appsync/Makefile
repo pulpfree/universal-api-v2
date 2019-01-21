@@ -2,34 +2,10 @@ include .env
 
 AWS_BUCKET_NAME ?= $(AWS_STACK_NAME)-v2
 
-default: buildapp awspackage awsdeploy
-# default: awspackage awsdeploy
-
-deploy: compileapp awspackage awsdeploy
-
-compileapp:
-	@rm -fr build/* && \
-	yarn run build && \
-	cp package.json build/ && \
-	cp ./src/config/defaults.yaml build/config/ && \
-	cd ./build && \
-	yarn install --prod
-
-buildapp:
-	cp ./src/config/defaults.yaml build/config/ && \
-	yarn run build
-
-run: buildapp
-	sam local start-api -n env.json
+default: awspackage awsdeploy
 
 validate:
 	sam validate
-
-configure:
-	@aws s3api create-bucket \
-		--bucket $(AWS_BUCKET_NAME) \
-		--region $(AWS_REGION) \
-		--create-bucket-configuration LocationConstraint=$(AWS_REGION)
 
 awspackage:
 	@aws cloudformation package \
@@ -52,7 +28,8 @@ awsdeploy:
 	 		ParamAccountId=$(AWS_ACCOUNT_ID) \
 	 	  ParamProjectName=$(AWS_STACK_NAME) \
 			ParamKeyExpiration=$(EXPIRATION) \
-			ParamENV=$(ENV)
+			ParamENV=$(ENV) \
+			ParamLambdaARN=$(LAMBDA_ARN)
 
 describe:
 	@aws cloudformation describe-stacks \
@@ -64,5 +41,3 @@ outputs:
 		| jq -r '.Stacks[0].Outputs'
 
 .PHONY: buildapp compileapp configure default deploy buildapp run validate awspackage awsdeploy describe outputs
-
-# arn:aws:lambda:ca-central-1:407205661819:function:universal-api-Lambda-X759KY8QFQDH

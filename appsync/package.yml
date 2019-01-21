@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Universal AppSync Lambda Resolvers
+Outputs:
+  APIKey:
+    Description: API Key
+    Value:
+      Fn::GetAtt:
+      - AppSyncAPIKey
+      - ApiKey
+  GraphQLApiEndpoint:
+    Description: GraphQL URL
+    Value:
+      Fn::GetAtt:
+      - AppSyncAPI
+      - GraphQLUrl
+  GraphQLApiId:
+    Description: The API ID of the GraphQL API
+    Value:
+      Fn::GetAtt:
+      - AppSyncAPI
+      - ApiId
+Parameters:
+  ParamENV:
+    Type: String
+  ParamLambdaARN:
+    Type: String
+  ParamProjectName:
+    Type: String
+Resources:
+  AppSyncAPI:
+    Description: The GraphQL API for the Universal App
+    Properties:
+      AuthenticationType: API_KEY
+      Name:
+        Fn::Join:
+        - '-'
+        - - Ref: ParamProjectName
+          - Ref: ParamENV
+    Type: AWS::AppSync::GraphQLApi
+  AppSyncAPIKey:
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+    Type: AWS::AppSync::ApiKey
+  AppSyncDataSource:
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      LambdaConfig:
+        LambdaFunctionArn:
+          Fn::Sub: ${ParamLambdaARN}
+      Name: handler
+      ServiceRoleArn:
+        Fn::GetAtt:
+        - AppSyncRole
+        - Arn
+      Type: AWS_LAMBDA
+    Type: AWS::AppSync::DataSource
+  AppSyncResolverCustomer:
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      FieldName: getCustomer
+      RequestMappingTemplate: "{ \n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"getCustomer\",\n    \"arguments\"\
+        : $utils.toJson($context.arguments) \n  } \n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+      TypeName: Query
+    Type: AWS::AppSync::Resolver
+  AppSyncResolverSearchCustomer:
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      FieldName: searchCustomer
+      RequestMappingTemplate: '{ "version" : "2017-02-28", "operation": "Invoke",
+        "payload": { "field": "searchCustomer", "arguments": $utils.toJson($context.arguments)
+        } }'
+      ResponseMappingTemplate: $util.toJson($context.result)
+      TypeName: Query
+    Type: AWS::AppSync::Resolver
+  AppSyncResolverSearchCustomerAddress:
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      FieldName: searchCustomerByAddress
+      RequestMappingTemplate: '{ "version" : "2017-02-28", "operation": "Invoke",
+        "payload": { "field": "searchCustomerByAddress", "arguments": $utils.toJson($context.arguments)
+        } }'
+      ResponseMappingTemplate: $util.toJson($context.result)
+      TypeName: Query
+    Type: AWS::AppSync::Resolver
+  AppSyncRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - appsync.amazonaws.com
+        Version: 2012-10-17
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action: lambda:invokeFunction
+            Effect: Allow
+            Resource:
+              Ref: ParamLambdaARN
+          Version: 2012-10-17
+        PolicyName: LambdaAccess
+      RoleName:
+        Fn::Sub: ${ParamProjectName}-appsync-role
+    Type: AWS::IAM::Role
+  AppSyncSchema:
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      Definition: "type Schema {\n  query: Query\n  mutation: Mutation\n}\ntype Address\
+        \ {\n  _id: ID!\n  associate: String!\n  city: String\n  country: String\n\
+        \  countryCode: String\n  postalCode: String\n  provinceCode: String\n  street1:\
+        \ String\n  street2: String\n  type: String\n}\ntype Customer {\n  _id: ID!\n\
+        \  active: Boolean!\n  address: Address\n  createdAt: String\n  email: String\n\
+        \  name: CustomerName!\n  phones: [CustomerPhone]\n  updatedAt: String\n}\n\
+        type CustomerName {\n  first: String!\n  last: String!\n  spouse: String\n\
+        }\ntype CustomerPhone {\n  _id: PhoneType!\n  countryCode: String\n  number:\
+        \ String!\n}\nenum PhoneType {\n  home\n  mobile\n}\ntype Mutation {\n  createCustomer(id:\
+        \ ID!): Customer\n}\ntype Query {\n  getCustomer(id: ID!): Customer\n  searchCustomer(field:\
+        \ String!, value: String!): [Customer]\n  searchCustomerByAddress(search:\
+        \ String!): [Customer]\n}\n"
+    Type: AWS::AppSync::GraphQLSchema
+Transform: AWS::Serverless-2016-10-31

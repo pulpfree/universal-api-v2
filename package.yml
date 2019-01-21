@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Universal AppSync Lambda Resolver Function
+Outputs:
+  LambdaARN:
+    Description: The Lambda Arn
+    Value:
+      Fn::GetAtt:
+      - Lambda
+      - Arn
+Parameters:
+  ParamAccountId:
+    Description: Account ID
+    Type: String
+  ParamENV:
+    Type: String
+  ParamProjectName:
+    AllowedPattern: ^[a-zA-Z][a-zA-Z0-9_-]*$
+    Description: Name of the API - used to generate unique names for resources
+    MaxLength: 20
+    MinLength: 3
+    Type: String
+  ParamSSMPath:
+    Default: universal-api
+    Description: Second path part in ssmParams
+    Type: String
+Resources:
+  Lambda:
+    Properties:
+      CodeUri: s3://universal-api-v2/lambda/4ae96be622a9fbe31cee3e75a1fd3d4a
+      Environment:
+        Variables:
+          NODE_ENV: production
+          Stage: prod
+      Events:
+        Api:
+          Properties:
+            Method: any
+            Path: /
+          Type: Api
+      Handler: index.handler
+      MemorySize: 1024
+      Role:
+        Fn::GetAtt:
+        - LambdaRole
+        - Arn
+      Runtime: nodejs8.10
+      Timeout: 10
+      Tracing: Active
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-5afb2932
+        - sg-8f6baee7
+        SubnetIds:
+        - subnet-0da8d176
+        - subnet-7f092816
+    Type: AWS::Serverless::Function
+  LambdaRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+        Version: 2012-10-17
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - ssm:GetParametersByPath
+            Effect: Allow
+            Resource:
+              Fn::Sub: arn:aws:ssm:${AWS::Region}:${ParamAccountId}:parameter/${ParamENV}/${ParamSSMPath}*
+          Version: 2012-10-17
+        PolicyName: FunctionParameterAccess
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName: FunctionLogAccess
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName: FunctionXRayAccess
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DeleteNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName: FunctionVPCAccess
+      RoleName:
+        Fn::Sub: ${ParamProjectName}-role
+    Type: AWS::IAM::Role
+Transform: AWS::Serverless-2016-10-31

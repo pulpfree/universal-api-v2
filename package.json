@@ -19,9 +19,25 @@
   "author": "Ron Dyck <rond@webbtech.net> (http://webbtech.net/)",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "2.389.0"
+    "aws-sdk": "2.389.0",
+    "js-yaml": "3.12.1",
+    "mongo-sanitize": "1.0.1",
+    "mongoose": "5.4.4",
+    "ramda": "0.26.1"
   },
   "devDependencies": {
-    "eslint": "5.12.0"
-  }
+    "babel-cli": "6.26.0",
+    "babel-preset-env": "1.7.0",
+    "eslint": "5.12.0",
+    "eslint-config-airbnb-base": "13.1.0",
+    "eslint-plugin-import": "2.14.0",
+    "jest": "23.6.0",
+    "pre-commit": "1.2.2",
+    "prettier": "1.15.3"
+  },
+  "pre-commit": [
+    "precommit-msg",
+    "fmtcode",
+    "test"
+  ]
 }

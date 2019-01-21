@@ -62,4 +62,4 @@ build
 
 pkgd-template.yaml
 
-docs
+docs/ssm.md

@@ -1,0 +1,11 @@
+awsRegion: 'ca-central-1'
+mongoDBHost: 192.168.86.24
+mongoDBName: 'universal-sales'
+mongoDBPassword: null
+mongoDBPort: 27017
+mongoDBReplset: null
+mongoDBUsername: null
+s3Bucket: ''
+ssmPath: 'universal-api'
+nodeEnv: 'prod'
+usessm: true

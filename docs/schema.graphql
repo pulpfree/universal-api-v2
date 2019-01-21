@@ -1,0 +1,55 @@
+﻿schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Address {
+  _id: ID!
+  associate: String!
+  city: String
+  country: String
+  countryCode: String
+  postalCode: String
+  provinceCode: String
+  street1: String
+  street2: String
+  type: String
+}
+
+type Customer {
+  _id: ID!
+  active: Boolean!
+  address: Address
+  createdAt: String
+  email: String
+  name: CustomerName!
+  phones: [CustomerPhone]
+  updatedAt: String
+}
+
+type CustomerName {
+  first: String!
+  last: String!
+  spouse: String
+}
+
+type CustomerPhone {
+  _id: PhoneType!
+  countryCode: String
+  number: String!
+}
+
+type Mutation {
+  createCustomer(id: ID!): Customer
+}
+
+type Query {
+  getCustomer(id: ID!): Customer
+  searchCustomer(field: String!, value: String!): [Customer]
+  searchCustomerByAddress(search: String!): [Customer]
+}
+
+enum PhoneType {
+  home
+  mobile
+}
