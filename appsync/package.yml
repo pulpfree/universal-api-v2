@@ -7,6 +7,10 @@ Outputs:
       Fn::GetAtt:
       - AppSyncAPIKey
       - ApiKey
+  CognitoUserPoolId:
+    Description: The Pool ID of the Cognito User Pool
+    Value:
+      Ref: UserPool
   GraphQLApiEndpoint:
     Description: GraphQL URL
     Value:
@@ -31,6 +35,12 @@ Resources:
     Description: The GraphQL API for the Universal App
     Properties:
       AuthenticationType: API_KEY
+      LogConfig:
+        CloudWatchLogsRoleArn:
+          Fn::GetAtt:
+          - AppSyncRole
+          - Arn
+        FieldLogLevel: ALL
       Name:
         Fn::Join:
         - '-'
@@ -131,6 +141,16 @@ Resources:
               Ref: ParamLambdaARN
           Version: 2012-10-17
         PolicyName: LambdaAccess
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName: LogAccess
       RoleName:
         Fn::Sub: ${ParamProjectName}-appsync-role
     Type: AWS::IAM::Role
@@ -153,4 +173,65 @@ Resources:
         \ String!, value: String!): [Customer]\n  searchCustomerByAddress(search:\
         \ String!): [Customer]\n}\n"
     Type: AWS::AppSync::GraphQLSchema
+  SNSRole:
+    Description: IAM Rolw to allow Cognito to send SNS messages
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - cognito-idp.amazonaws.com
+        Version: 2012-10-17
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action: sns:publish
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName: SNSPublish
+      RoleName:
+        Fn::Sub: ${ParamProjectName}-cognito-sns-role
+    Type: AWS::IAM::Role
+  UserPool:
+    Description: Cognito user pool
+    Properties:
+      AutoVerifiedAttributes:
+      - phone_number
+      MfaConfiguration: 'ON'
+      Schema:
+      - AttributeDataType: String
+        Mutable: true
+        Name: name
+        Required: true
+      - AttributeDataType: String
+        Mutable: false
+        Name: email
+        Required: true
+      - AttributeDataType: String
+        Mutable: false
+        Name: phone_number
+        Required: true
+      SmsConfiguration:
+        ExternalId:
+          Fn::Sub: ${ParamProjectName}-external
+        SnsCallerArn:
+          Fn::GetAtt:
+          - SNSRole
+          - Arn
+      UserPoolName:
+        Fn::Sub: ${ParamProjectName}-user-pool
+    Type: AWS::Cognito::UserPool
+  UserPoolClient:
+    Description: App Client used by AWS AppSync
+    Properties:
+      ClientName:
+        Fn::Sub: ${ParamProjectName}-appsync-client
+      GenerateSecret: false
+      UserPoolId:
+        Ref: UserPool
+    Type: AWS::Cognito::UserPoolClient
 Transform: AWS::Serverless-2016-10-31

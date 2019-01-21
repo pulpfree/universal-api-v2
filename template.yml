@@ -48,6 +48,8 @@ Resources:
         SubnetIds:
           - subnet-0da8d176
           - subnet-7f092816
+      Tags:
+        BillTo: 'Universal'
 
   LambdaRole:
     Type: AWS::IAM::Role

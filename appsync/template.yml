@@ -20,6 +20,9 @@ Resources:
     Properties:
       Name: !Join [ -, [ !Ref ParamProjectName, !Ref ParamENV ] ]
       AuthenticationType: API_KEY
+      LogConfig:
+        CloudWatchLogsRoleArn: !GetAtt AppSyncRole.Arn
+        FieldLogLevel: ALL
 
   AppSyncAPIKey:
     Type: AWS::AppSync::ApiKey
@@ -152,6 +155,72 @@ Resources:
           - Effect: Allow
             Action: lambda:invokeFunction
             Resource: !Ref ParamLambdaARN
+      - PolicyName: LogAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+
+  SNSRole: 
+    Type: AWS::IAM::Role
+    Description: "IAM Rolw to allow Cognito to send SNS messages"
+    Properties:
+      RoleName: !Sub ${ParamProjectName}-cognito-sns-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - cognito-idp.amazonaws.com
+            Action:
+            - sts:AssumeRole
+      Policies:
+      - PolicyName: SNSPublish
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action: sns:publish
+            Effect: Allow
+            Resource: "*"
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Description: "Cognito user pool"
+    Properties:
+      UserPoolName: !Sub ${ParamProjectName}-user-pool
+      AutoVerifiedAttributes:
+        - phone_number
+      MfaConfiguration: "ON"
+      SmsConfiguration:
+        ExternalId: !Sub ${ParamProjectName}-external
+        SnsCallerArn: !GetAtt SNSRole.Arn
+      Schema:
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+        - Name: phone_number
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Description: "App Client used by AWS AppSync"
+    Properties:
+      ClientName: !Sub ${ParamProjectName}-appsync-client
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
 
 Outputs:
   APIKey:
@@ -163,3 +232,6 @@ Outputs:
   GraphQLApiId:
     Description: The API ID of the GraphQL API
     Value: !GetAtt AppSyncAPI.ApiId
+  CognitoUserPoolId:
+    Description: The Pool ID of the Cognito User Pool
+    Value: !Ref UserPool

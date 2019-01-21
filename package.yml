@@ -26,7 +26,7 @@ Parameters:
 Resources:
   Lambda:
     Properties:
-      CodeUri: s3://universal-api-v2/lambda/4ae96be622a9fbe31cee3e75a1fd3d4a
+      CodeUri: s3://universal-api-v2/lambda/4a462d0f54c5619f3d6710039299c831
       Environment:
         Variables:
           NODE_ENV: production
@@ -44,6 +44,8 @@ Resources:
         - LambdaRole
         - Arn
       Runtime: nodejs8.10
+      Tags:
+        BillTo: Universal
       Timeout: 10
       Tracing: Active
       VpcConfig:
