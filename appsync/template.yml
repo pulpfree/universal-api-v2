@@ -10,6 +10,10 @@ Parameters:
     Type: String
   ParamLambdaARN:
     Type: String
+  ParamSchemaURI:
+    Type: String
+    # Default: s3://universal-api-v2/schema/schema.graphql
+    Default: s3://pf-tmp/schema/schema.graphql
 
 Resources:
 
@@ -19,23 +23,21 @@ Resources:
     Description: "The GraphQL API for the Universal App"
     Properties:
       Name: !Join [ -, [ !Ref ParamProjectName, !Ref ParamENV ] ]
-      AuthenticationType: API_KEY
+      AuthenticationType: AMAZON_COGNITO_USER_POOLS
+      UserPoolConfig:
+        UserPoolId: !Ref UserPool
+        AwsRegion: !Sub ${AWS::Region}
+        DefaultAction: "ALLOW"
       LogConfig:
         CloudWatchLogsRoleArn: !GetAtt AppSyncRole.Arn
         FieldLogLevel: ALL
-
-  AppSyncAPIKey:
-    Type: AWS::AppSync::ApiKey
-    Properties:
-      ApiId: !GetAtt AppSyncAPI.ApiId
-      # Expires: !Ref ParamKeyExpiration
 
   AppSyncSchema:
     Type: "AWS::AppSync::GraphQLSchema"
     Properties:
       ApiId: !GetAtt AppSyncAPI.ApiId
       # Alternatively we could store the schema in S3
-      # DefinitionS3Location: s3://mybucket/schema.graphql
+      # DefinitionS3Location: !Sub ${ParamSchemaURI}
       Definition: |
         type Schema {
           query: Query
@@ -47,12 +49,28 @@ Resources:
           city: String
           country: String
           countryCode: String
+          customerID: ID
           postalCode: String
           provinceCode: String
           street1: String
           street2: String
           type: String
         }
+
+        input AddressInput {
+          _id: ID
+          associate: String!
+          city: String!
+          country: String
+          countryCode: String
+          customerID: ID
+          postalCode: String!
+          provinceCode: String!
+          street1: String!
+          street2: String
+          type: String!
+        }
+
         type Customer {
           _id: ID!
           active: Boolean!
@@ -77,13 +95,514 @@ Resources:
           home
           mobile
         }
-        type Mutation {
-          createCustomer(id: ID!): Customer
+
+        input CustomerInput {
+          _id: ID
+          email: String
+          name: CustomerNameInput!
+          phones: [CustomerPhoneInput]
         }
+        input CustomerNameInput {
+          first: String!
+          last: String!
+          spouse: String
+        }
+        input CustomerPhoneInput {
+          _id: PhoneType!
+          countryCode: String
+          number: String!
+        }
+
+        type JobSheet {
+          _id: ID!
+          addressID: Address
+          customerID: Customer
+          features: String
+          createdAt: String
+          updatedAt: String
+        }
+        type JobSheetData {
+          jobsheet: JobSheet
+          windows: [JobSheetWindow]
+          groups: [JobSheetGroup]
+          other: [JobSheetOther]
+        }
+        
+        type JobSheetWindow {
+          _id: ID!
+          costs: JobSheetItemCosts
+          dims: JobSheetWindowDims
+          jobsheetID: ID
+          productID: Product
+          qty: Int
+          rooms: [String]
+          specs: JobSheetWindowSpecs
+          createdAt: String
+          updatedAt: String
+        }
+        type JobSheetItemCosts {
+          discounted: Float
+          discountedAmount: Float
+          extendTotal: Float
+          extendUnit: Float
+          install: Float
+          installType: Float
+          netUnit: Float
+          options: Float
+          trim: Float
+          window: Float
+        }
+        type JobSheetWindowSpecs {
+          installType: String
+          options: String
+          overSize: Int
+          sqft: Int
+          trim: String
+        }
+        type JobSheetWindowDims {
+          height: WindowDims
+          width: WindowDims
+        }
+        type WindowDims {
+          decimal: Float
+          fraction: String
+          inch: Int
+          overSize: Int
+          round: Int
+          underSize: Int
+        }
+        
+        type JobSheetGroup {
+          _id: ID!
+          costs: JobSheetGroupCosts
+          dims: JobSheetGroupDims
+          jobsheetID: ID!
+          items: [JobSheetGroupItem]
+          qty: Int
+          rooms: [String]
+          specs: JobSheetGroupSpecs
+          updatedAt: String
+          createdAt: String
+        }
+        type JobSheetGroupDims {
+          height: GroupWindowDims
+          width: GroupWindowDims
+        }
+        type GroupWindowDims {
+          decimal: Float
+          diff: Float
+          fraction: String
+          inch: Int
+        }
+        type JobSheetGroupCosts {
+          discounted: Float
+          discountedAmount: Float
+          extendTotal: Float
+          extendUnit: Float
+          install: Float
+          installType: Float
+          netUnit: Float
+          options: Float
+          trim: Float
+          windows: Float
+        }
+        type JobSheetGroupSpecs {
+          groupID: String
+          groupType: JobSheetGroupType
+          installType: String
+          options: String
+          sqft: Int
+          style: String
+          trim: String
+        }
+        type JobSheetGroupType {
+          _id: ID
+          name: String
+        }
+        type JobSheetGroupItem {
+          _id: ID
+          costs: GroupItemCosts
+          dims: GroupItemDims
+          qty: Int
+          product: Product
+          productID: ID
+          specs: GroupItemSpecs
+        }
+        type GroupItemCosts {
+          extendUnit: Float
+          extendTotal: Float
+        }
+        type GroupItemDims {
+          height: WindowDims
+          width: WindowDims
+        }
+        type GroupItemSpecs {
+          extendSqft: Int
+          options: String,
+          overSize: Int
+          sqft: Int
+        }
+
+        type JobSheetOther {
+          _id: ID!
+          costs: OtherCosts
+          description: String
+          jobsheetID: ID
+          product: String
+          qty: Int
+          rooms: [String]
+          specs: OtherSpecs
+          updatedAt: String
+          createdAt: String
+        }
+        type OtherCosts {
+          extendUnit: Float
+          extendTotal: Float
+        }
+        type OtherSpecs {
+          options: String
+          location: String
+        }
+
+        input JobSheetInput {
+          _id: ID
+          customerID: ID!
+          features: String
+        }
+
+        type Product {
+          _id: ID!
+          maxHeight: Int
+          maxWidth: Int
+          minHeight: Int
+          minWidth: Int
+          name: String!
+          premium: ProductPremium
+          sizeCost: AWSJSON
+        }
+        type ProductPremium {
+          cost: Int
+          oversizeLimit: Int
+        }
+        type GroupType {
+          _id: ID!
+          name: String
+        }
+        type Quote {
+          _id: ID!
+          closed: Boolean!
+          customerID: Customer
+          deposit: Boolean!
+          discount: QuoteDiscount
+          invoiced: Boolean!
+          items: QuoteItems
+          itemCosts: QuoteItemCosts
+          itemSummary: QuoteItemSummary
+          jobsheetID: JobSheet
+          number: Int!
+          pdfCreated: Boolean!
+          quotePrice: QuotePrice
+          version: Int!
+          createdAt: String
+          updatedAt: String
+        }
+        type QuotePrice {
+          outstanding: Float
+          payments: Float
+          subtotal: Float
+          tax: Float
+          total: Float
+        }
+        type QuoteDiscount {
+          description: String
+          discount: Float
+          subtotal: Float
+          tax: Float
+          total: Float
+        }
+        type QuoteItems {
+          group: [String]
+          other: [String]
+          window: [String]
+        }
+        type QuoteItemCosts {
+          group: Float
+          other: Float
+          subtotal: Float
+          window: Float
+        }
+        type QuoteItemSummary {
+          group: QuoteItemSummaryDetails
+          other: QuoteItemSummaryDetails
+          window: QuoteItemSummaryDetails
+        }
+        type QuoteItemSummaryDetails {
+          items: [QuoteItemSummaryItems]
+          totals: QuoteItemSummaryExtendTotal
+        }
+        type QuoteItemSummaryItems {
+          costs: QuoteItemSummaryCosts
+          description: String
+          qty: Int
+          rooms: String
+          specs: AWSJSON
+        }
+        type QuoteItemSummaryExtendTotal {
+          extendTotal: Float
+        }
+        type QuoteItemSummaryCosts {
+          extendTotal: Float
+          extendUnit: Float
+          netUnit: Float
+        }
+        type Quotes { 
+          quotes: [Quote]!
+          totalInvoiced: Float
+          totalOutstanding: Float
+        }
+        type PDFSignedURL {
+          code: Int
+          data: SignedURLData
+          message: String
+          status: String
+          timestamp: Int
+        }
+        type SignedURLData {
+          url: String
+        }
+
+        input QuoteInput {
+          _id: ID
+          customerID: ID!
+          jobsheetID: ID!
+          discount: DiscountInput
+          features: String
+          items: ItemsInput
+          itemCosts: ItemCostsInput
+          itemSummary: ItemSummaryInput
+          quotePrice: QuotePriceInput
+          version: Int
+        }
+        input DiscountInput {
+          description: String
+          discount: Float
+          subtotal: Float
+          tax: Float
+          total: Float
+        }
+        input ItemsInput {
+          group: [String]
+          other: [String]
+          window: [String]
+        }
+        input ItemCostsInput {
+          group: Float
+          other: Float
+          subtotal: Float
+          window: Float
+        }
+        input ItemSummaryInput {
+          group: ItemSummaryDetailsInput
+          other: ItemSummaryDetailsInput
+          window: ItemSummaryDetailsInput
+        }
+        input ItemSummaryDetailsInput {
+          items: [ItemSummaryItemsInput]
+          totals: ItemSummaryExtendTotalInput
+        }
+        input ItemSummaryExtendTotalInput {
+          extendTotal: Float
+        }
+        input ItemSummaryItemsInput {
+          costs: ItemSummaryCostsInput
+          description: String
+          qty: Int
+          rooms: String
+          specs: AWSJSON
+        }
+        input ItemSummaryCostsInput {
+          extendTotal: Float
+          extendUnit: Float
+          netUnit: Float
+        }
+        input QuotePriceInput {
+          outstanding: Float
+          payments: Float
+          subtotal: Float
+          tax: Float
+          total: Float
+        }
+        input SignedURLInput {
+          number: Int!
+          type: String!
+          version: Int
+        }
+
+        input WindowInput {
+          _id: ID
+          costs: WindowCostsInput
+          dims: WindowHWDimsInput
+          jobsheetID: ID!
+          productID: ID!
+          qty: Int
+          rooms: [String]
+          specs: WindowSpecsInput
+        }
+        input WindowCostsInput {
+          discounted: Float
+          discountedAmount: Float
+          extendTotal: Float
+          extendUnit: Float
+          install: Float
+          installType: Float
+          netUnit: Float
+          options: Float
+          trim: Float
+          window: Float
+        }
+        input WindowHWDimsInput {
+          height: WindowDimsInput
+          width: WindowDimsInput
+        }
+        input WindowDimsInput {
+          decimal: Float
+          fraction: String
+          inch: Int
+          overSize: Int
+          round: Int
+          underSize: Int
+        }
+        input WindowSpecsInput {
+          extendSqft: Int
+          installType: String
+          options: String
+          overSize: Int
+          sqft: Int
+          trim: String
+        }
+
+        input OtherInput {
+          _id: ID
+          costs: OtherCostsInput
+          description: String
+          jobsheetID: ID
+          product: String
+          qty: Int
+          rooms: [String]
+          specs: OtherSpecsInput
+        }
+        input OtherCostsInput {
+          extendUnit: Float
+          extendTotal: Float
+        }
+        input OtherSpecsInput {
+          location: String
+          options: String
+        }
+
+        input GroupInput {
+          _id: ID
+          jobsheetID: ID!
+          costs: GroupCostsInput
+          dims: GroupHWDimsInput
+          items: [GroupItemInput]
+          qty: Int
+          rooms: [String]
+          specs: GroupSpecsInput
+        }
+        input GroupCostsInput {
+          discounted: Float
+          discountedAmount: Float
+          extendTotal: Float
+          extendUnit: Float
+          install: Float
+          installType: Float
+          netUnit: Float
+          options: Float
+          trim: Float
+          windows: Float
+        }
+        input GroupHWDimsInput {
+          height: GroupDimsInput
+          width: GroupDimsInput
+        }
+        input GroupDimsInput {
+          decimal: Float
+          diff: Float
+          fraction: String
+          inch: Int
+        }
+        input GroupSpecsInput {
+          groupID: String
+          groupType: ID
+          installType: String
+          options: String
+          sqft: Int
+          style: String
+          trim: String
+        }
+        input GroupItemInput {
+          _id: ID!
+          costs: GroupItemCostsInput
+          dims: WindowHWDimsInput
+          product: GroupItemProductInput
+          productID: ID!
+          qty: Int
+          specs: GroupItemSpecsInput
+        }
+        input GroupItemCostsInput {
+          extendUnit: Float
+          extendTotal: Float
+        }
+        input GroupItemProductInput {
+          name: String
+        }
+        input GroupItemSpecsInput {
+          extendSqft: Int
+          options: String
+          overSize: Int
+          sqft: Int
+        }
+
+        type DBResult {
+          n: Int
+          ok: Int
+        }
+
+        type Mutation {
+          customerPersist(customerInput: CustomerInput!, addressInput: AddressInput): Customer
+          customerRemove(id: ID!): DBResult
+
+          jobSheetPersist(jobSheetInput: JobSheetInput!, addressInput: AddressInput, addressID: ID): JobSheet
+          jobSheetRemove(id: ID!): DBResult
+          jobSheetPersistGroup(input: GroupInput!): JobSheetGroup
+          jobSheetRemoveGroup(id: ID!): DBResult
+          jobSheetPersistOther(input: OtherInput!): JobSheetOther
+          jobSheetRemoveOther(id: ID!): DBResult
+          jobSheetPersistWindow(input: WindowInput!): JobSheetWindow
+          jobSheetRemoveWindow(id: ID!): DBResult
+          
+          quotePersist(input: QuoteInput!): Quote
+          quoteRemove(id: ID!): DBResult
+        }
+
         type Query {
-          getCustomer(id: ID!): Customer
-          searchCustomer(field: String!, value: String!): [Customer]
-          searchCustomerByAddress(search: String!): [Customer]
+          customer(customerID: ID!): Customer
+          searchCustomer(field: String, value: String, search: String, active: Boolean): [Customer]
+          
+          quote(quoteID: ID!): Quote
+          searchQuotes(year: String, invoiced: Boolean, closed: Boolean): Quotes
+          searchQuotesByCustomer(customerID: ID!): Quotes
+          pdfSignedURL(input: SignedURLInput!): PDFSignedURL
+          
+          jobSheetData(jobSheetID: ID!): JobSheetData
+          jobSheetWindow(windowID: ID!): JobSheetWindow
+          jobSheetGroup(groupID: ID!): JobSheetGroup
+          jobSheetOther(otherID: ID!): JobSheetOther
+          searchJobSheetsByCustomer(customerID: ID!): [JobSheet]
+          
+          products: [Product]
+          groupTypes: [GroupType]
         }
 
   AppSyncDataSource:
@@ -98,42 +617,498 @@ Resources:
 
   AppSyncResolverCustomer:
     Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
     Properties:
       ApiId: !GetAtt AppSyncAPI.ApiId
       TypeName: Query
-      FieldName: getCustomer
+      FieldName: customer
       DataSourceName: !GetAtt AppSyncDataSource.Name
       RequestMappingTemplate: |
         { 
           "version" : "2017-02-28",
           "operation": "Invoke",
           "payload": {
-            "field": "getCustomer",
+            "field": "customer",
             "arguments": $utils.toJson($context.arguments) 
           } 
         }
       ResponseMappingTemplate: $util.toJson($context.result)
 
+  AppSyncResolverCustomerPersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: customerPersist
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "customerPersist",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverCustomerRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: customerRemove
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "customerRemove",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
   AppSyncResolverSearchCustomer:
     Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
     Properties:
       ApiId: !GetAtt AppSyncAPI.ApiId
       TypeName: Query
       FieldName: searchCustomer
       DataSourceName: !GetAtt AppSyncDataSource.Name
-      RequestMappingTemplate: '{ "version" : "2017-02-28", "operation": "Invoke", "payload": { "field": "searchCustomer", "arguments": $utils.toJson($context.arguments) } }'
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "searchCustomer",
+            "arguments": $utils.toJson($context.arguments)
+          } 
+        }
       ResponseMappingTemplate: $util.toJson($context.result)
 
   AppSyncResolverSearchCustomerAddress:
     Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
     Properties:
       ApiId: !GetAtt AppSyncAPI.ApiId
       TypeName: Query
       FieldName: searchCustomerByAddress
       DataSourceName: !GetAtt AppSyncDataSource.Name
-      RequestMappingTemplate: '{ "version" : "2017-02-28", "operation": "Invoke", "payload": { "field": "searchCustomerByAddress", "arguments": $utils.toJson($context.arguments) } }'
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "searchCustomerByAddress",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
       ResponseMappingTemplate: $util.toJson($context.result)
       
+  AppSyncResolverQuote:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: quote
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "quote",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverSearchQuotes:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: searchQuotes
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "searchQuotes",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverPDFSignedURL:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: pdfSignedURL
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "pdfSignedURL",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverSearchQuotesByCustomer:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: searchQuotesByCustomer
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "searchQuotes",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverQuotePersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: quotePersist
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "quotePersist",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverQuoteRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: quoteRemove
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "quoteRemove",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheet:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: jobSheetData
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetData",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetPersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersist
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetPersist",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemove
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetRemove",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetWindow:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: "jobSheetWindow"
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetWindow",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetGroup:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: "jobSheetGroup"
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetGroup",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetPersistGroup:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistGroup
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetPersistGroup",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetRemoveGroup:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemoveGroup
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetRemoveGroup",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetOther:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: "jobSheetOther"
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetOther",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetPersistOther:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistOther
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetPersistOther",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetRemoveOther:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemoveOther
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetRemoveOther",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetByCustomer:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: searchJobSheetsByCustomer
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "searchJobSheetsByCustomer",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverProducts:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: products
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "products",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverGroupTypes:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: groupTypes
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "groupTypes",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetPersistWindow:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistWindow
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetPersistWindow",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverJobSheetRemoveWindow:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemoveWindow
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetRemoveWindow",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
   AppSyncRole:
     Type: AWS::IAM::Role
     Properties:
@@ -168,7 +1143,7 @@ Resources:
 
   SNSRole: 
     Type: AWS::IAM::Role
-    Description: "IAM Rolw to allow Cognito to send SNS messages"
+    Description: "IAM Role to allow Cognito to send SNS messages"
     Properties:
       RoleName: !Sub ${ParamProjectName}-cognito-sns-role
       AssumeRolePolicyDocument:
@@ -221,11 +1196,14 @@ Resources:
       ClientName: !Sub ${ParamProjectName}-appsync-client
       GenerateSecret: false
       UserPoolId: !Ref UserPool
+      ExplicitAuthFlows: 
+        - USER_PASSWORD_AUTH
+        - ADMIN_NO_SRP_AUTH
 
 Outputs:
-  APIKey:
-    Description: API Key
-    Value: !GetAtt AppSyncAPIKey.ApiKey
+  # APIKey:
+  #   Description: API Key
+  #   Value: !GetAtt AppSyncAPIKey.ApiKey
   GraphQLApiEndpoint:
     Description: GraphQL URL
     Value: !GetAtt AppSyncAPI.GraphQLUrl
@@ -235,3 +1213,6 @@ Outputs:
   CognitoUserPoolId:
     Description: The Pool ID of the Cognito User Pool
     Value: !Ref UserPool
+  CognitoUserPoolClientId:
+    Description: The Pool ID of the Cognito User Pool Client
+    Value: !Ref UserPoolClient

@@ -1,16 +1,766 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Description: Universal AppSync Lambda Resolvers
+Parameters:
+  ParamProjectName:
+    Type: String
+  ParamENV:
+    Type: String
+  ParamLambdaARN:
+    Type: String
+  ParamSchemaURI:
+    Type: String
+    Default: s3://pf-tmp/schema/schema.graphql
+Resources:
+  AppSyncAPI:
+    Type: AWS::AppSync::GraphQLApi
+    Description: The GraphQL API for the Universal App
+    Properties:
+      Name:
+        Fn::Join:
+        - '-'
+        - - Ref: ParamProjectName
+          - Ref: ParamENV
+      AuthenticationType: AMAZON_COGNITO_USER_POOLS
+      UserPoolConfig:
+        UserPoolId:
+          Ref: UserPool
+        AwsRegion:
+          Fn::Sub: ${AWS::Region}
+        DefaultAction: ALLOW
+      LogConfig:
+        CloudWatchLogsRoleArn:
+          Fn::GetAtt:
+          - AppSyncRole
+          - Arn
+        FieldLogLevel: ALL
+  AppSyncSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      Definition: "type Schema {\n  query: Query\n  mutation: Mutation\n}\ntype Address\
+        \ {\n  _id: ID!\n  associate: String!\n  city: String\n  country: String\n\
+        \  countryCode: String\n  customerID: ID\n  postalCode: String\n  provinceCode:\
+        \ String\n  street1: String\n  street2: String\n  type: String\n}\n\ninput\
+        \ AddressInput {\n  _id: ID\n  associate: String!\n  city: String!\n  country:\
+        \ String\n  countryCode: String\n  customerID: ID\n  postalCode: String!\n\
+        \  provinceCode: String!\n  street1: String!\n  street2: String\n  type: String!\n\
+        }\n\ntype Customer {\n  _id: ID!\n  active: Boolean!\n  address: Address\n\
+        \  createdAt: String\n  email: String\n  name: CustomerName!\n  phones: [CustomerPhone]\n\
+        \  updatedAt: String\n}\ntype CustomerName {\n  first: String!\n  last: String!\n\
+        \  spouse: String\n}\ntype CustomerPhone {\n  _id: PhoneType!\n  countryCode:\
+        \ String\n  number: String!\n}\nenum PhoneType {\n  home\n  mobile\n}\n\n\
+        input CustomerInput {\n  _id: ID\n  email: String\n  name: CustomerNameInput!\n\
+        \  phones: [CustomerPhoneInput]\n}\ninput CustomerNameInput {\n  first: String!\n\
+        \  last: String!\n  spouse: String\n}\ninput CustomerPhoneInput {\n  _id:\
+        \ PhoneType!\n  countryCode: String\n  number: String!\n}\n\ntype JobSheet\
+        \ {\n  _id: ID!\n  addressID: Address\n  customerID: Customer\n  features:\
+        \ String\n  createdAt: String\n  updatedAt: String\n}\ntype JobSheetData {\n\
+        \  jobsheet: JobSheet\n  windows: [JobSheetWindow]\n  groups: [JobSheetGroup]\n\
+        \  other: [JobSheetOther]\n}\n\ntype JobSheetWindow {\n  _id: ID!\n  costs:\
+        \ JobSheetItemCosts\n  dims: JobSheetWindowDims\n  jobsheetID: ID\n  productID:\
+        \ Product\n  qty: Int\n  rooms: [String]\n  specs: JobSheetWindowSpecs\n \
+        \ createdAt: String\n  updatedAt: String\n}\ntype JobSheetItemCosts {\n  discounted:\
+        \ Float\n  discountedAmount: Float\n  extendTotal: Float\n  extendUnit: Float\n\
+        \  install: Float\n  installType: Float\n  netUnit: Float\n  options: Float\n\
+        \  trim: Float\n  window: Float\n}\ntype JobSheetWindowSpecs {\n  installType:\
+        \ String\n  options: String\n  overSize: Int\n  sqft: Int\n  trim: String\n\
+        }\ntype JobSheetWindowDims {\n  height: WindowDims\n  width: WindowDims\n\
+        }\ntype WindowDims {\n  decimal: Float\n  fraction: String\n  inch: Int\n\
+        \  overSize: Int\n  round: Int\n  underSize: Int\n}\n\ntype JobSheetGroup\
+        \ {\n  _id: ID!\n  costs: JobSheetGroupCosts\n  dims: JobSheetGroupDims\n\
+        \  jobsheetID: ID!\n  items: [JobSheetGroupItem]\n  qty: Int\n  rooms: [String]\n\
+        \  specs: JobSheetGroupSpecs\n  updatedAt: String\n  createdAt: String\n}\n\
+        type JobSheetGroupDims {\n  height: GroupWindowDims\n  width: GroupWindowDims\n\
+        }\ntype GroupWindowDims {\n  decimal: Float\n  diff: Float\n  fraction: String\n\
+        \  inch: Int\n}\ntype JobSheetGroupCosts {\n  discounted: Float\n  discountedAmount:\
+        \ Float\n  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\
+        \ Float\n  netUnit: Float\n  options: Float\n  trim: Float\n  windows: Float\n\
+        }\ntype JobSheetGroupSpecs {\n  groupID: String\n  groupType: JobSheetGroupType\n\
+        \  installType: String\n  options: String\n  sqft: Int\n  style: String\n\
+        \  trim: String\n}\ntype JobSheetGroupType {\n  _id: ID\n  name: String\n\
+        }\ntype JobSheetGroupItem {\n  _id: ID\n  costs: GroupItemCosts\n  dims: GroupItemDims\n\
+        \  qty: Int\n  product: Product\n  productID: ID\n  specs: GroupItemSpecs\n\
+        }\ntype GroupItemCosts {\n  extendUnit: Float\n  extendTotal: Float\n}\ntype\
+        \ GroupItemDims {\n  height: WindowDims\n  width: WindowDims\n}\ntype GroupItemSpecs\
+        \ {\n  extendSqft: Int\n  options: String,\n  overSize: Int\n  sqft: Int\n\
+        }\n\ntype JobSheetOther {\n  _id: ID!\n  costs: OtherCosts\n  description:\
+        \ String\n  jobsheetID: ID\n  product: String\n  qty: Int\n  rooms: [String]\n\
+        \  specs: OtherSpecs\n  updatedAt: String\n  createdAt: String\n}\ntype OtherCosts\
+        \ {\n  extendUnit: Float\n  extendTotal: Float\n}\ntype OtherSpecs {\n  options:\
+        \ String\n  location: String\n}\n\ninput JobSheetInput {\n  _id: ID\n  customerID:\
+        \ ID!\n  features: String\n}\n\ntype Product {\n  _id: ID!\n  maxHeight: Int\n\
+        \  maxWidth: Int\n  minHeight: Int\n  minWidth: Int\n  name: String!\n  premium:\
+        \ ProductPremium\n  sizeCost: AWSJSON\n}\ntype ProductPremium {\n  cost: Int\n\
+        \  oversizeLimit: Int\n}\ntype GroupType {\n  _id: ID!\n  name: String\n}\n\
+        type Quote {\n  _id: ID!\n  closed: Boolean!\n  customerID: Customer\n  deposit:\
+        \ Boolean!\n  discount: QuoteDiscount\n  invoiced: Boolean!\n  items: QuoteItems\n\
+        \  itemCosts: QuoteItemCosts\n  itemSummary: QuoteItemSummary\n  jobsheetID:\
+        \ JobSheet\n  number: Int!\n  pdfCreated: Boolean!\n  quotePrice: QuotePrice\n\
+        \  version: Int!\n  createdAt: String\n  updatedAt: String\n}\ntype QuotePrice\
+        \ {\n  outstanding: Float\n  payments: Float\n  subtotal: Float\n  tax: Float\n\
+        \  total: Float\n}\ntype QuoteDiscount {\n  description: String\n  discount:\
+        \ Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ntype QuoteItems\
+        \ {\n  group: [String]\n  other: [String]\n  window: [String]\n}\ntype QuoteItemCosts\
+        \ {\n  group: Float\n  other: Float\n  subtotal: Float\n  window: Float\n\
+        }\ntype QuoteItemSummary {\n  group: QuoteItemSummaryDetails\n  other: QuoteItemSummaryDetails\n\
+        \  window: QuoteItemSummaryDetails\n}\ntype QuoteItemSummaryDetails {\n  items:\
+        \ [QuoteItemSummaryItems]\n  totals: QuoteItemSummaryExtendTotal\n}\ntype\
+        \ QuoteItemSummaryItems {\n  costs: QuoteItemSummaryCosts\n  description:\
+        \ String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\ntype QuoteItemSummaryExtendTotal\
+        \ {\n  extendTotal: Float\n}\ntype QuoteItemSummaryCosts {\n  extendTotal:\
+        \ Float\n  extendUnit: Float\n  netUnit: Float\n}\ntype Quotes { \n  quotes:\
+        \ [Quote]!\n  totalInvoiced: Float\n  totalOutstanding: Float\n}\ntype PDFSignedURL\
+        \ {\n  code: Int\n  data: SignedURLData\n  message: String\n  status: String\n\
+        \  timestamp: Int\n}\ntype SignedURLData {\n  url: String\n}\n\ninput QuoteInput\
+        \ {\n  _id: ID\n  customerID: ID!\n  jobsheetID: ID!\n  discount: DiscountInput\n\
+        \  features: String\n  items: ItemsInput\n  itemCosts: ItemCostsInput\n  itemSummary:\
+        \ ItemSummaryInput\n  quotePrice: QuotePriceInput\n  version: Int\n}\ninput\
+        \ DiscountInput {\n  description: String\n  discount: Float\n  subtotal: Float\n\
+        \  tax: Float\n  total: Float\n}\ninput ItemsInput {\n  group: [String]\n\
+        \  other: [String]\n  window: [String]\n}\ninput ItemCostsInput {\n  group:\
+        \ Float\n  other: Float\n  subtotal: Float\n  window: Float\n}\ninput ItemSummaryInput\
+        \ {\n  group: ItemSummaryDetailsInput\n  other: ItemSummaryDetailsInput\n\
+        \  window: ItemSummaryDetailsInput\n}\ninput ItemSummaryDetailsInput {\n \
+        \ items: [ItemSummaryItemsInput]\n  totals: ItemSummaryExtendTotalInput\n\
+        }\ninput ItemSummaryExtendTotalInput {\n  extendTotal: Float\n}\ninput ItemSummaryItemsInput\
+        \ {\n  costs: ItemSummaryCostsInput\n  description: String\n  qty: Int\n \
+        \ rooms: String\n  specs: AWSJSON\n}\ninput ItemSummaryCostsInput {\n  extendTotal:\
+        \ Float\n  extendUnit: Float\n  netUnit: Float\n}\ninput QuotePriceInput {\n\
+        \  outstanding: Float\n  payments: Float\n  subtotal: Float\n  tax: Float\n\
+        \  total: Float\n}\ninput SignedURLInput {\n  number: Int!\n  type: String!\n\
+        \  version: Int\n}\n\ninput WindowInput {\n  _id: ID\n  costs: WindowCostsInput\n\
+        \  dims: WindowHWDimsInput\n  jobsheetID: ID!\n  productID: ID!\n  qty: Int\n\
+        \  rooms: [String]\n  specs: WindowSpecsInput\n}\ninput WindowCostsInput {\n\
+        \  discounted: Float\n  discountedAmount: Float\n  extendTotal: Float\n  extendUnit:\
+        \ Float\n  install: Float\n  installType: Float\n  netUnit: Float\n  options:\
+        \ Float\n  trim: Float\n  window: Float\n}\ninput WindowHWDimsInput {\n  height:\
+        \ WindowDimsInput\n  width: WindowDimsInput\n}\ninput WindowDimsInput {\n\
+        \  decimal: Float\n  fraction: String\n  inch: Int\n  overSize: Int\n  round:\
+        \ Int\n  underSize: Int\n}\ninput WindowSpecsInput {\n  extendSqft: Int\n\
+        \  installType: String\n  options: String\n  overSize: Int\n  sqft: Int\n\
+        \  trim: String\n}\n\ninput OtherInput {\n  _id: ID\n  costs: OtherCostsInput\n\
+        \  description: String\n  jobsheetID: ID\n  product: String\n  qty: Int\n\
+        \  rooms: [String]\n  specs: OtherSpecsInput\n}\ninput OtherCostsInput {\n\
+        \  extendUnit: Float\n  extendTotal: Float\n}\ninput OtherSpecsInput {\n \
+        \ location: String\n  options: String\n}\n\ninput GroupInput {\n  _id: ID\n\
+        \  jobsheetID: ID!\n  costs: GroupCostsInput\n  dims: GroupHWDimsInput\n \
+        \ items: [GroupItemInput]\n  qty: Int\n  rooms: [String]\n  specs: GroupSpecsInput\n\
+        }\ninput GroupCostsInput {\n  discounted: Float\n  discountedAmount: Float\n\
+        \  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\
+        \ Float\n  netUnit: Float\n  options: Float\n  trim: Float\n  windows: Float\n\
+        }\ninput GroupHWDimsInput {\n  height: GroupDimsInput\n  width: GroupDimsInput\n\
+        }\ninput GroupDimsInput {\n  decimal: Float\n  diff: Float\n  fraction: String\n\
+        \  inch: Int\n}\ninput GroupSpecsInput {\n  groupID: String\n  groupType:\
+        \ ID\n  installType: String\n  options: String\n  sqft: Int\n  style: String\n\
+        \  trim: String\n}\ninput GroupItemInput {\n  _id: ID!\n  costs: GroupItemCostsInput\n\
+        \  dims: WindowHWDimsInput\n  product: GroupItemProductInput\n  productID:\
+        \ ID!\n  qty: Int\n  specs: GroupItemSpecsInput\n}\ninput GroupItemCostsInput\
+        \ {\n  extendUnit: Float\n  extendTotal: Float\n}\ninput GroupItemProductInput\
+        \ {\n  name: String\n}\ninput GroupItemSpecsInput {\n  extendSqft: Int\n \
+        \ options: String\n  overSize: Int\n  sqft: Int\n}\n\ntype DBResult {\n  n:\
+        \ Int\n  ok: Int\n}\n\ntype Mutation {\n  customerPersist(customerInput: CustomerInput!,\
+        \ addressInput: AddressInput): Customer\n  customerRemove(id: ID!): DBResult\n\
+        \n  jobSheetPersist(jobSheetInput: JobSheetInput!, addressInput: AddressInput,\
+        \ addressID: ID): JobSheet\n  jobSheetRemove(id: ID!): DBResult\n  jobSheetPersistGroup(input:\
+        \ GroupInput!): JobSheetGroup\n  jobSheetRemoveGroup(id: ID!): DBResult\n\
+        \  jobSheetPersistOther(input: OtherInput!): JobSheetOther\n  jobSheetRemoveOther(id:\
+        \ ID!): DBResult\n  jobSheetPersistWindow(input: WindowInput!): JobSheetWindow\n\
+        \  jobSheetRemoveWindow(id: ID!): DBResult\n  \n  quotePersist(input: QuoteInput!):\
+        \ Quote\n  quoteRemove(id: ID!): DBResult\n}\n\ntype Query {\n  customer(customerID:\
+        \ ID!): Customer\n  searchCustomer(field: String, value: String, search: String,\
+        \ active: Boolean): [Customer]\n  \n  quote(quoteID: ID!): Quote\n  searchQuotes(year:\
+        \ String, invoiced: Boolean, closed: Boolean): Quotes\n  searchQuotesByCustomer(customerID:\
+        \ ID!): Quotes\n  pdfSignedURL(input: SignedURLInput!): PDFSignedURL\n  \n\
+        \  jobSheetData(jobSheetID: ID!): JobSheetData\n  jobSheetWindow(windowID:\
+        \ ID!): JobSheetWindow\n  jobSheetGroup(groupID: ID!): JobSheetGroup\n  jobSheetOther(otherID:\
+        \ ID!): JobSheetOther\n  searchJobSheetsByCustomer(customerID: ID!): [JobSheet]\n\
+        \  \n  products: [Product]\n  groupTypes: [GroupType]\n}\n"
+  AppSyncDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      Name: handler
+      Type: AWS_LAMBDA
+      LambdaConfig:
+        LambdaFunctionArn:
+          Fn::Sub: ${ParamLambdaARN}
+      ServiceRoleArn:
+        Fn::GetAtt:
+        - AppSyncRole
+        - Arn
+  AppSyncResolverCustomer:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: customer
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{ \n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"customer\",\n    \"arguments\"\
+        : $utils.toJson($context.arguments) \n  } \n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverCustomerPersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: customerPersist
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"customerPersist\",\n   \
+        \ \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverCustomerRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: customerRemove
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"customerRemove\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverSearchCustomer:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: searchCustomer
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"searchCustomer\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  } \n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverSearchCustomerAddress:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: searchCustomerByAddress
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"searchCustomerByAddress\"\
+        ,\n    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverQuote:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: quote
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"quote\",\n    \"arguments\"\
+        : $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverSearchQuotes:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: searchQuotes
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"searchQuotes\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverPDFSignedURL:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: pdfSignedURL
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"pdfSignedURL\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverSearchQuotesByCustomer:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: searchQuotesByCustomer
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"searchQuotes\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverQuotePersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: quotePersist
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"quotePersist\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverQuoteRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: quoteRemove
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"quoteRemove\",\n    \"arguments\"\
+        : $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheet:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: jobSheetData
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetData\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetPersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersist
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetPersist\",\n   \
+        \ \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemove
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetRemove\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetWindow:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: jobSheetWindow
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetWindow\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetGroup:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: jobSheetGroup
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetGroup\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetPersistGroup:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistGroup
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetPersistGroup\",\n\
+        \    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetRemoveGroup:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemoveGroup
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetRemoveGroup\",\n\
+        \    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetOther:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: jobSheetOther
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetOther\",\n    \"\
+        arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetPersistOther:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistOther
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetPersistOther\",\n\
+        \    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetRemoveOther:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemoveOther
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetRemoveOther\",\n\
+        \    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetByCustomer:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: searchJobSheetsByCustomer
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"searchJobSheetsByCustomer\"\
+        ,\n    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverProducts:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: products
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"products\",\n    \"arguments\"\
+        : $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverGroupTypes:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Query
+      FieldName: groupTypes
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"groupTypes\",\n    \"arguments\"\
+        : $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetPersistWindow:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistWindow
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetPersistWindow\"\
+        ,\n    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncResolverJobSheetRemoveWindow:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId:
+        Fn::GetAtt:
+        - AppSyncAPI
+        - ApiId
+      TypeName: Mutation
+      FieldName: jobSheetRemoveWindow
+      DataSourceName:
+        Fn::GetAtt:
+        - AppSyncDataSource
+        - Name
+      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
+        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"jobSheetRemoveWindow\",\n\
+        \    \"arguments\": $utils.toJson($context.arguments)\n  }\n}\n"
+      ResponseMappingTemplate: $util.toJson($context.result)
+  AppSyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Fn::Sub: ${ParamProjectName}-appsync-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - appsync.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: LambdaAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action: lambda:invokeFunction
+            Resource:
+              Ref: ParamLambdaARN
+      - PolicyName: LogAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+  SNSRole:
+    Type: AWS::IAM::Role
+    Description: IAM Role to allow Cognito to send SNS messages
+    Properties:
+      RoleName:
+        Fn::Sub: ${ParamProjectName}-cognito-sns-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - cognito-idp.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: SNSPublish
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action: sns:publish
+            Effect: Allow
+            Resource: '*'
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Description: Cognito user pool
+    Properties:
+      UserPoolName:
+        Fn::Sub: ${ParamProjectName}-user-pool
+      AutoVerifiedAttributes:
+      - phone_number
+      MfaConfiguration: 'ON'
+      SmsConfiguration:
+        ExternalId:
+          Fn::Sub: ${ParamProjectName}-external
+        SnsCallerArn:
+          Fn::GetAtt:
+          - SNSRole
+          - Arn
+      Schema:
+      - Name: name
+        AttributeDataType: String
+        Mutable: true
+        Required: true
+      - Name: email
+        AttributeDataType: String
+        Mutable: false
+        Required: true
+      - Name: phone_number
+        AttributeDataType: String
+        Mutable: false
+        Required: true
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Description: App Client used by AWS AppSync
+    Properties:
+      ClientName:
+        Fn::Sub: ${ParamProjectName}-appsync-client
+      GenerateSecret: false
+      UserPoolId:
+        Ref: UserPool
+      ExplicitAuthFlows:
+      - USER_PASSWORD_AUTH
+      - ADMIN_NO_SRP_AUTH
 Outputs:
-  APIKey:
-    Description: API Key
-    Value:
-      Fn::GetAtt:
-      - AppSyncAPIKey
-      - ApiKey
-  CognitoUserPoolId:
-    Description: The Pool ID of the Cognito User Pool
-    Value:
-      Ref: UserPool
   GraphQLApiEndpoint:
     Description: GraphQL URL
     Value:
@@ -23,215 +773,11 @@ Outputs:
       Fn::GetAtt:
       - AppSyncAPI
       - ApiId
-Parameters:
-  ParamENV:
-    Type: String
-  ParamLambdaARN:
-    Type: String
-  ParamProjectName:
-    Type: String
-Resources:
-  AppSyncAPI:
-    Description: The GraphQL API for the Universal App
-    Properties:
-      AuthenticationType: API_KEY
-      LogConfig:
-        CloudWatchLogsRoleArn:
-          Fn::GetAtt:
-          - AppSyncRole
-          - Arn
-        FieldLogLevel: ALL
-      Name:
-        Fn::Join:
-        - '-'
-        - - Ref: ParamProjectName
-          - Ref: ParamENV
-    Type: AWS::AppSync::GraphQLApi
-  AppSyncAPIKey:
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-    Type: AWS::AppSync::ApiKey
-  AppSyncDataSource:
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-      LambdaConfig:
-        LambdaFunctionArn:
-          Fn::Sub: ${ParamLambdaARN}
-      Name: handler
-      ServiceRoleArn:
-        Fn::GetAtt:
-        - AppSyncRole
-        - Arn
-      Type: AWS_LAMBDA
-    Type: AWS::AppSync::DataSource
-  AppSyncResolverCustomer:
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-      DataSourceName:
-        Fn::GetAtt:
-        - AppSyncDataSource
-        - Name
-      FieldName: getCustomer
-      RequestMappingTemplate: "{ \n  \"version\" : \"2017-02-28\",\n  \"operation\"\
-        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"getCustomer\",\n    \"arguments\"\
-        : $utils.toJson($context.arguments) \n  } \n}\n"
-      ResponseMappingTemplate: $util.toJson($context.result)
-      TypeName: Query
-    Type: AWS::AppSync::Resolver
-  AppSyncResolverSearchCustomer:
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-      DataSourceName:
-        Fn::GetAtt:
-        - AppSyncDataSource
-        - Name
-      FieldName: searchCustomer
-      RequestMappingTemplate: '{ "version" : "2017-02-28", "operation": "Invoke",
-        "payload": { "field": "searchCustomer", "arguments": $utils.toJson($context.arguments)
-        } }'
-      ResponseMappingTemplate: $util.toJson($context.result)
-      TypeName: Query
-    Type: AWS::AppSync::Resolver
-  AppSyncResolverSearchCustomerAddress:
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-      DataSourceName:
-        Fn::GetAtt:
-        - AppSyncDataSource
-        - Name
-      FieldName: searchCustomerByAddress
-      RequestMappingTemplate: '{ "version" : "2017-02-28", "operation": "Invoke",
-        "payload": { "field": "searchCustomerByAddress", "arguments": $utils.toJson($context.arguments)
-        } }'
-      ResponseMappingTemplate: $util.toJson($context.result)
-      TypeName: Query
-    Type: AWS::AppSync::Resolver
-  AppSyncRole:
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Action:
-          - sts:AssumeRole
-          Effect: Allow
-          Principal:
-            Service:
-            - appsync.amazonaws.com
-        Version: 2012-10-17
-      Policies:
-      - PolicyDocument:
-          Statement:
-          - Action: lambda:invokeFunction
-            Effect: Allow
-            Resource:
-              Ref: ParamLambdaARN
-          Version: 2012-10-17
-        PolicyName: LambdaAccess
-      - PolicyDocument:
-          Statement:
-          - Action:
-            - logs:CreateLogGroup
-            - logs:CreateLogStream
-            - logs:PutLogEvents
-            Effect: Allow
-            Resource: '*'
-          Version: 2012-10-17
-        PolicyName: LogAccess
-      RoleName:
-        Fn::Sub: ${ParamProjectName}-appsync-role
-    Type: AWS::IAM::Role
-  AppSyncSchema:
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-      Definition: "type Schema {\n  query: Query\n  mutation: Mutation\n}\ntype Address\
-        \ {\n  _id: ID!\n  associate: String!\n  city: String\n  country: String\n\
-        \  countryCode: String\n  postalCode: String\n  provinceCode: String\n  street1:\
-        \ String\n  street2: String\n  type: String\n}\ntype Customer {\n  _id: ID!\n\
-        \  active: Boolean!\n  address: Address\n  createdAt: String\n  email: String\n\
-        \  name: CustomerName!\n  phones: [CustomerPhone]\n  updatedAt: String\n}\n\
-        type CustomerName {\n  first: String!\n  last: String!\n  spouse: String\n\
-        }\ntype CustomerPhone {\n  _id: PhoneType!\n  countryCode: String\n  number:\
-        \ String!\n}\nenum PhoneType {\n  home\n  mobile\n}\ntype Mutation {\n  createCustomer(id:\
-        \ ID!): Customer\n}\ntype Query {\n  getCustomer(id: ID!): Customer\n  searchCustomer(field:\
-        \ String!, value: String!): [Customer]\n  searchCustomerByAddress(search:\
-        \ String!): [Customer]\n}\n"
-    Type: AWS::AppSync::GraphQLSchema
-  SNSRole:
-    Description: IAM Rolw to allow Cognito to send SNS messages
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Action:
-          - sts:AssumeRole
-          Effect: Allow
-          Principal:
-            Service:
-            - cognito-idp.amazonaws.com
-        Version: 2012-10-17
-      Policies:
-      - PolicyDocument:
-          Statement:
-          - Action: sns:publish
-            Effect: Allow
-            Resource: '*'
-          Version: 2012-10-17
-        PolicyName: SNSPublish
-      RoleName:
-        Fn::Sub: ${ParamProjectName}-cognito-sns-role
-    Type: AWS::IAM::Role
-  UserPool:
-    Description: Cognito user pool
-    Properties:
-      AutoVerifiedAttributes:
-      - phone_number
-      MfaConfiguration: 'ON'
-      Schema:
-      - AttributeDataType: String
-        Mutable: true
-        Name: name
-        Required: true
-      - AttributeDataType: String
-        Mutable: false
-        Name: email
-        Required: true
-      - AttributeDataType: String
-        Mutable: false
-        Name: phone_number
-        Required: true
-      SmsConfiguration:
-        ExternalId:
-          Fn::Sub: ${ParamProjectName}-external
-        SnsCallerArn:
-          Fn::GetAtt:
-          - SNSRole
-          - Arn
-      UserPoolName:
-        Fn::Sub: ${ParamProjectName}-user-pool
-    Type: AWS::Cognito::UserPool
-  UserPoolClient:
-    Description: App Client used by AWS AppSync
-    Properties:
-      ClientName:
-        Fn::Sub: ${ParamProjectName}-appsync-client
-      GenerateSecret: false
-      UserPoolId:
-        Ref: UserPool
-    Type: AWS::Cognito::UserPoolClient
-Transform: AWS::Serverless-2016-10-31
+  CognitoUserPoolId:
+    Description: The Pool ID of the Cognito User Pool
+    Value:
+      Ref: UserPool
+  CognitoUserPoolClientId:
+    Description: The Pool ID of the Cognito User Pool Client
+    Value:
+      Ref: UserPoolClient

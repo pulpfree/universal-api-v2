@@ -63,3 +63,5 @@ build
 pkgd-template.yaml
 
 docs/ssm.md
+docs/cognito.md
+docs/auth.json

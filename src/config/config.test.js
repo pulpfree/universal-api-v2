@@ -1,5 +1,7 @@
 import cfg from './config'
 
+// to test just this file, run: yarn test:w src/config/config.test.js
+
 test('ensure config path', () => {
   expect(() => { cfg.setDefaultsPath('badfile.yaml') }).toThrowError('ENOENT')
   expect(() => { cfg.setDefaultsPath('defaults.yaml') }).not.toThrowError()

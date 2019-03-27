@@ -39,6 +39,11 @@ type CustomerPhone {
   number: String!
 }
 
+type JobSheet {
+  _id: ID!
+  address: Address
+}
+
 type Mutation {
   createCustomer(id: ID!): Customer
 }

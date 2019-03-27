@@ -8,7 +8,7 @@
     "lint": "eslint './src/**/*.js'",
     "lint:fix": "eslint './src/**/*.js' --fix",
     "test": "jest src",
-    "test:w": "jest --watch src",
+    "test:w": "jest --watch",
     "test:clear": "jest --clearCache",
     "coverage": "jest --collectCoverageFrom=src/**.js --coverage src",
     "prettier": "prettier --write './src/*.js'",
@@ -19,10 +19,13 @@
   "author": "Ron Dyck <rond@webbtech.net> (http://webbtech.net/)",
   "license": "MIT",
   "dependencies": {
+    "@thundra/core": "2.0.8",
     "aws-sdk": "2.389.0",
     "js-yaml": "3.12.1",
+    "moment": "2.24.0",
     "mongo-sanitize": "1.0.1",
-    "mongoose": "5.4.4",
+    "mongoose": "5.4.6",
+    "node-fetch": "2.3.0",
     "ramda": "0.26.1"
   },
   "devDependencies": {
@@ -39,5 +42,8 @@
     "precommit-msg",
     "fmtcode",
     "test"
-  ]
+  ],
+  "jest": {
+    "testEnvironment": "node"
+  }
 }

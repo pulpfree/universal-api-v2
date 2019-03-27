@@ -28,7 +28,7 @@ Resources:
       Handler: index.handler
       MemorySize: 1024
       Runtime: nodejs8.10
-      Timeout: 10
+      Timeout: 12
       Tracing: Active
       Environment:
         Variables:
