@@ -17,11 +17,13 @@ Parameters:
     Default: universal-api
   ParamENV:
     Type: String
+  ParamAppBucket:
+    Type: String
 Resources:
   Lambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://universal-api-v2/lambda/23bc551c1cbcbdd53c0fac11f67773e5
+      CodeUri: s3://universal-api-v2/lambda/e3c5de74ca3a9146a2673ffc764e27a7
       Handler: index.handler
       MemorySize: 1024
       Runtime: nodejs8.10
@@ -103,6 +105,14 @@ Resources:
             - ec2:DescribeNetworkInterfaces
             Effect: Allow
             Resource: '*'
+      - PolicyName: FunctionS3Access
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - s3:*
+            Effect: Allow
+            Resource: arn:aws:s3:::*
 Outputs:
   LambdaARN:
     Description: The Lambda Arn

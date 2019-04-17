@@ -7,7 +7,7 @@ mongoDBReplset: null
 mongoDBUsername: null
 PDFCreateURLURI: ''
 PDFSaveURI: ''
-s3Bucket: ''
+s3Bucket: 'ca-universalwindows'
 ssmPath: 'universal-api'
 nodeEnv: 'prod'
 usessm: true

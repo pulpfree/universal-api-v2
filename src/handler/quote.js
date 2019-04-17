@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import moment from 'moment'
 import ramda from 'ramda'
 import fetch from 'node-fetch'
+import AWS from 'aws-sdk'
 
 const Address = require('../model/address')
 const Quote = require('../model/quote')
@@ -53,6 +54,44 @@ async function savePDF(args, cfg) {
   }
 }
 
+// todo: nice if there was a way to authenticate without using accessKeyId and screenAccessKey
+async function deletePDFs(args, cfg) {
+  const s3 = new AWS.S3({
+    apiVersion: '2006-03-01',
+    accessKeyId: cfg.awsAccessKeyId,
+    secretAccessKey: cfg.awsSecretAccessKey,
+  })
+  const params = {
+    Bucket: cfg.s3Bucket,
+    Prefix: args.docType,
+  }
+  // fetch objects and assemble array of objects to delete
+  let S3Objects
+  try {
+    S3Objects = await s3.listObjectsV2(params).promise()
+  } catch (e) {
+    throw new Error(e)
+  }
+  const retObjects = S3Objects.Contents.filter(o => o.Key.indexOf(args.number) > -1)
+  if (!retObjects.length) return false
+  const delObjects = retObjects.map(o => ({ Key: o.Key }))
+
+  // now delete
+  const delParams = {
+    Bucket: cfg.s3Bucket,
+    Delete: {
+      Objects: delObjects,
+    },
+  }
+  let delRet
+  try {
+    delRet = await s3.deleteObjects(delParams).promise()
+  } catch (e) {
+    throw new Error(e)
+  }
+  return delRet
+}
+
 function QuoteHandler() { }
 
 QuoteHandler.prototype.find = async (args) => {
@@ -99,9 +138,10 @@ QuoteHandler.prototype.find = async (args) => {
 
   // We could look into using the mongoose cursor and transform methods here
   // see: https://mongoosejs.com/docs/api.html#query_Query-cursor
+  // fixme: using for/of and await in loop not good practice
   try {
-    for (const quote of quotes) {
-      quote.jobsheetID.addressID = await fetchAddress(quote.jobsheetID.addressID)
+    for (const quote of quotes) { // eslint-disable-line
+      quote.jobsheetID.addressID = await fetchAddress(quote.jobsheetID.addressID) // eslint-disable-line
     }
   } catch (e) {
     throw new Error(e)
@@ -178,10 +218,37 @@ QuoteHandler.prototype.persist = async (args, cfg) => {
   return quoteReturn
 }
 
-QuoteHandler.prototype.remove = async (args) => {
+QuoteHandler.prototype.remove = async (args, cfg) => {
   const { id } = args
 
+  let quote
   let quoteReturn
+  try {
+    quote = await Quote.findById(id, { number: 1, invoiced: 1, 'quotePrice.payments': 1 })
+  } catch (e) {
+    throw new Error(e)
+  }
+  if (!quote) return false
+
+  if (quote.quotePrice.payments > 0) {
+    throw new Error('Cannot delete an invoice with payments')
+  }
+
+  if (quote.invoiced) {
+    deletePDFs({ docType: 'invoice', number: quote.number }, cfg)
+    await Quote.findOneAndUpdate(
+      { _id: mongoose.Types.ObjectId(id) },
+      { invoiced: false },
+      { new: true }
+    )
+    return {
+      n: 1,
+      ok: 1,
+    }
+  }
+
+  await deletePDFs({ docType: 'quote', number: quote.number }, cfg)
+
   try {
     quoteReturn = await Quote.deleteOne({ _id: id })
   } catch (e) {
@@ -209,276 +276,44 @@ QuoteHandler.prototype.pdfSignedURL = async (args, cfg) => {
   return response.json()
 }
 
-/**
- * Helper functions
- */
+QuoteHandler.prototype.createInvoice = async (args, cfg) => {
+  const { id } = args
 
-
-/* QuoteHandler.prototype.create = (req, reply) => {
-  let props = Object.keys(Quote.schema.paths),
-    record = {},
-    items
-
-  if (req.payload.items) {
-    let is = sanz(req.payload.items)
-    items = {
-      'items.group': is.group || null,
-      'items.other': is.other || null,
-      'items.window': is.window || null,
-    }
-    delete req.payload.items
-  }
-  const payload = Utils.JSONflatten(req.payload)
-  Object.assign(payload, items)
-
-  props.map(key => {
-    if (payload[key] !== undefined) {
-      record[key] = sanz(payload[key])
-    }
-  })
-
-  const quoteNum = QuoteMeta.fetchNextQuoteNum().exec(),
-    quote = new Quote(record),
-    error = quote.validateSync()
-  if (error) return reply(Boom.badRequest(error))
-
-  let jobsheet = setSheet(record.jobsheetID)
-  jobsheet(true).then(sheet => {
-    setSheetSummary(sheet, quote)
-
-    quoteNum.then(num => {
-      quote.number = num.value
-      quote.save(err => {
-        if (err) return reply(Boom.badRequest(err))
-        reply(quote).code(201)
-      })
-    })
-  })
-} */
-
-/* QuoteHandler.prototype.pdf = (req, reply) => {
-  // const isDev     = process.env.NODE_ENV === 'development' || false
-  const quoteID = sanz(req.payload.quoteID)
-  const docType = sanz(req.payload.docType)
-  const sendMail = sanz(req.payload.sendMail) || false
-  if (!quoteID) {
-    return reply(Boom.badRequest('Missing quoteID in QuoteHandler.prototype.pdf'))
-  }
-  if (!docType) {
-    return reply(Boom.badRequest('Missing docType in QuoteHandler.prototype.pdf'))
+  let quote
+  try {
+    quote = await Quote.findById(id)
+  } catch (e) {
+    throw new Error(e)
   }
 
-  const payload = {
-    quoteID,
-    docType,
-    sendMail,
+  // Save PDF
+  const pdfArgs = {
+    quoteID: id,
+    docType: 'invoice',
   }
-  let lambdaURI = constants.AWS.createPDFAPI
-  // if (isDev) {
-  //   lambdaURI = 'http://127.0.0.1:3000/create-pdf'
-  // } else {
-  //   lambdaURI = constants.AWS.createPDFAPI
-  // }
-
-  request(
-    {
-      method: 'POST',
-      uri: lambdaURI,
-      body: JSON.stringify(payload),
-    },
-    (error, response) => {
-      if (response.statusCode == 201) {
-        reply(payload).code(201)
-      } else {
-        reply(Boom.badRequest(error.message))
-      }
-    }
+  await savePDF(pdfArgs, cfg)
+  return Quote.findOneAndUpdate(
+    { _id: mongoose.Types.ObjectId(id) },
+    { invoiced: true, 'quotePrice.outstanding': quote.quotePrice.total },
+    { new: true }
   )
-} */
+}
 
-/* QuoteHandler.prototype.patch = (req, reply) => {
-  const id = sanz(req.params.id)
-  const field = sanz(req.payload.field)
-  const value = sanz(req.payload.value)
+QuoteHandler.prototype.persistDiscount = async (args) => {
+  const { input } = args
+  const { _id, discount, quotePrice } = input
 
-  let props = Object.keys(Quote.schema.paths)
-  if (props.indexOf(field) < 0) {
-    return reply(Boom.badRequest('Invalid field requested'))
+  let quoteReturn
+  try {
+    quoteReturn = await Quote.findOneAndUpdate(
+      { _id },
+      { discount, quotePrice },
+      { new: true }
+    )
+  } catch (e) {
+    throw new Error(e)
   }
-  const q = {
-    [field]: value,
-  }
-
-  Quote.findByIdAndUpdate(id, q, (err, model) => {
-    if (err) return reply(Boom.badRequest(err))
-    reply(model).code(200)
-  })
-} */
+  return quoteReturn
+}
 
 module.exports = QuoteHandler
-
-/* function setSheet(jobsheetID) {
-
-  let sheet
-  const q = { jobsheetID }
-
-  return co.wrap(function* () {
-    try {
-      sheet = yield {
-        jobsheet: Jobsheet.findById(jobsheetID).populate('addressID'),
-        window: JobsheetWindow.find(q).populate('productID').sort({ updatedAt: 1 }),
-        group: JobsheetWindowGroup.find(q).populate('specs.groupType').sort({ updatedAt: 1 }),
-        other: JobsheetOther.find(q).sort({ updatedAt: 1 }),
-      }
-    } catch (err) {
-      return err
-    }
-
-    // Now fetch products for group items and populate
-    let productIDs = []
-    sheet.group.forEach(grp => {
-      grp.items.forEach(item => {
-        productIDs.push(item.productID)
-      })
-    })
-    let products = yield Product.find({ _id: { $in: productIDs } })
-
-    sheet.group.forEach(grp => {
-      if (grp.specs.groupTypeID) {
-        grp.specs.groupID = grp.specs.groupTypeID
-      }
-      grp.items.forEach(item => {
-        item.productID = products.find(p => {
-          return p._id.toString() === item.productID.toString()
-        })
-      })
-    })
-    return sheet
-  })
-} */
-
-/* function setSheetSummary(sheet, quote) {
-
-  const types = ['window', 'group', 'other']
-  let items = {},
-    totals = {},
-    summary = {},
-    tmpCosts = {
-      extendTotal: 0,
-    }
-
-  types.forEach(t => {
-    items[t] = []
-
-    // Reset costs
-    totals[t] = Object.assign({}, tmpCosts)
-
-    if (quote.items[t] !== undefined && quote.items[t].length > 0) {
-      let sheetTypeItems = sheet[t]
-
-      quote.items[t].forEach(i => {
-        let sheetItem = sheetTypeItems.find(ele => {
-          return ele._id.toString() === i.toString()
-        })
-        let itemInfo = extractItemInfo(sheetItem, t)
-        items[t].push(itemInfo)
-      })
-
-      // Calculate totals
-      items[t].forEach(it => {
-        totals[t].extendTotal += it.costs.extendTotal || 0
-      })
-    }
-    summary[t] = {
-      items: items[t],
-      totals: totals[t],
-    }
-  })
-
-  quote.itemSummary = summary
-  quote.itemCosts.group = summary.group.totals.extendTotal
-  quote.itemCosts.other = summary.other.totals.extendTotal
-  quote.itemCosts.window = summary.window.totals.extendTotal
-  quote.itemCosts.subtotal = quote.itemCosts.group + quote.itemCosts.other + quote.itemCosts.window
-
-  const taxMultiplier = parseFloat(constants.HST / 100)
-  const taxDivisor = parseFloat(1 + taxMultiplier)
-
-  if (quote.discount.total) {
-    const subtotal = quote.discount.total / taxDivisor
-    const discount = {
-      description: quote.discount.description,
-      discount: quote.itemCosts.subtotal - quote.discount.total,
-      subtotal,
-      tax: quote.discount.total - subtotal,
-      total: quote.discount.total,
-    }
-    quote.discount = discount
-    quote.quotePrice.subtotal = discount.subtotal
-    quote.quotePrice.tax = discount.tax
-    quote.quotePrice.total = discount.total
-  } else {
-    const subtotal = quote.itemCosts.subtotal / taxDivisor
-    quote.quotePrice.subtotal = subtotal
-    quote.quotePrice.tax = quote.itemCosts.subtotal - subtotal
-    quote.quotePrice.total = quote.itemCosts.subtotal
-  }
-} */
-
-/* function extractItemInfo(item, type) {
-  let info = {}
-  switch (type) {
-    case 'window':
-      info.specs = {
-        installType: item.specs.installType,
-        name: item.productID.name,
-        options: item.specs.options,
-        productID: item.productID._id,
-      }
-      info.qty = item.qty
-      info.costs = {
-        discountAmount: item.costs.discountAmount,
-        discounted: item.costs.discounted,
-        extendTotal: item.costs.extendTotal,
-        extendUnit: item.costs.extendUnit,
-        netUnit: item.costs.discounted > 0 ? item.costs.discounted : item.costs.extendUnit,
-      }
-      info.rooms = item.rooms.join(', ')
-      return info
-
-    case 'group':
-      info.specs = {
-        groupTypeID: item.specs.groupType._id.toString(),
-        installType: item.specs.installType,
-        name: item.specs.groupType.name,
-        options: item.specs.options,
-      }
-      info.qty = item.qty
-      info.costs = {
-        discountAmount: item.costs.discountAmount,
-        discounted: item.costs.discounted,
-        extendTotal: item.costs.extendTotal,
-        extendUnit: item.costs.extendUnit,
-        netUnit: item.costs.discounted > 0 ? item.costs.discounted : item.costs.extendUnit,
-      }
-      info.rooms = item.rooms.join(', ')
-      return info
-
-    case 'other':
-      info.description = item.description
-      info.qty = item.qty
-      info.specs = item.specs
-      info.costs = item.costs
-      info.rooms = item.rooms.join(', ')
-      return info
-  }
-} */
-
-
-/* async function processArray(array) {
-  // map array to promises
-  const promises = array.map(delayedLog)
-  // wait until all promises are resolved
-  await Promise.all(promises)
-  console.log('Done!')
-} */

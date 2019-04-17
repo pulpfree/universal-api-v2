@@ -150,3 +150,32 @@ test('customer Remove fail', async () => {
   }
   await expect(Handler(req)).rejects.toThrow(/There/)
 })
+
+test('customer toggle active', async () => {
+  const cReq = {
+    field: 'customer',
+    arguments: { customerID },
+  }
+  const cRes = await Handler(cReq)
+
+  const req = {
+    field: 'customerToggleActive',
+    arguments: { id: customerID },
+  }
+  const res = await Handler(req)
+  expect(res).toBeTruthy()
+  expect(res.active).toEqual(!cRes.active)
+})
+
+test.only('persist notes', async () => {
+  const notes = 'New test notes for customer.\nNew line here.'
+  const req = {
+    field: 'customerPersistNotes',
+    arguments: {
+      id: customerID,
+      notes,
+    },
+  }
+  const res = await Handler(req)
+  expect(res).toBeTruthy()
+})

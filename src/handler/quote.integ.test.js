@@ -8,7 +8,10 @@ import db from '../mongo/connect'
 
 // to test just this file, run: yarn test:w src/handler/quote.integ.test.js
 
-const quoteID = '5b19e0c62aac0409e37ec013'
+const quoteID = '5b19e0c62aac0409e37ec013' // closed quote with payments etc
+const quoteIDInv = '5c880187b5342edbda202712' // invoiced quote
+const quoteIDdel = '5c9bdeb506e4fe483fb1b3f6' // quote to delete
+const quoteIDCreateInvoice = '5c9bdce2962b5d8234c0fc8c'
 const customerID = '5b1846c62aac040faf7ebfe7'
 
 const quoteNew = {
@@ -102,7 +105,7 @@ test('searchQuotesByYear', async () => {
   expect(allInvoiced).toBeTruthy()
 })
 
-test.only('quotePersist', async () => {
+test('quotePersist', async () => {
   const req = {
     field: 'quotePersist',
     arguments: {
@@ -126,6 +129,42 @@ test('quoteRemove newID', async () => {
   expect(res.ok).toEqual(1)
 })
 
+// this doesn't work, likely due to the Handle is not directly throwing the error
+/* test('invoiceRemove', () => {
+  const req = {
+    field: 'quoteRemove',
+    arguments: { id: quoteID },
+  }
+  expect(() => { Handler(req) }).toThrowError(/Cannot delete/)
+}) */
+
+/* test('quoteRemove invoice', async () => {
+  const req = {
+    field: 'quoteRemove',
+    arguments: { id: quoteIDInv },
+  }
+  const res = await Handler(req, cfg)
+
+  // console.log('res:', res)
+  // expect(res).toBeTruthy()
+  // expect(res.invoiced).toEqual(false)
+  // expect(res.ok).toEqual(1)
+}) */
+
+test('quoteRemove basic', async () => {
+  const req = {
+    field: 'quoteRemove',
+    arguments: { id: quoteIDdel },
+  }
+  const res = await Handler(req, cfg)
+
+  // console.log('res:', res)
+  expect(res).toBeTruthy()
+  // expect(res.invoiced).toEqual(false)
+  // expect(res.ok).toEqual(1)
+})
+
+
 test('pdfCreateURL', async () => {
   const req = {
     field: 'pdfSignedURL',
@@ -140,4 +179,41 @@ test('pdfCreateURL', async () => {
   const res = await Handler(req, cfg)
   expect(res).toBeTruthy()
   expect(res.data.url).toEqual(expect.stringMatching(/^https:\/\/ca-universalwindows.s3.ca-central-1.amazonaws.com\/quote\/qte-1083-r1.pdf/))
+})
+
+test('createInvoice', async () => {
+  const req = {
+    field: 'createInvoice',
+    arguments: { id: quoteIDCreateInvoice },
+  }
+  const res = await Handler(req, cfg)
+  expect(res).toBeTruthy()
+  expect(res.invoiced).toEqual(true)
+})
+
+test.only('persist discount', async () => {
+  // base itemCosts.subtotal is 3700
+  const input = {
+    _id: quoteIDInv,
+    discount: {
+      description: 'Adjust for something',
+      discount: 200,
+      subtotal: 3097.345132743,
+      tax: 402.654867257,
+      total: 3500,
+    },
+    quotePrice: {
+      outstanding: 0,
+      payments: 0,
+      subtotal: 3097.345132743,
+      tax: 402.654867257,
+      total: 3500,
+    },
+  }
+  const req = {
+    field: 'quotePersistDiscount',
+    arguments: { input },
+  }
+  const res = await Handler(req, cfg)
+  expect(res).toBeTruthy()
 })

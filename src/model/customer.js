@@ -52,6 +52,10 @@ const customerSchema = new Schema(
       },
       prefix: String,
     },
+    notes: {
+      type: String,
+      default: '',
+    },
     phones: [phoneSchema],
   },
   {

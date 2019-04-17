@@ -166,7 +166,7 @@ CustomerHandler.prototype.remove = async (args) => {
     throw new Error(e)
   }
   if (nSheets) {
-    throw new Error(`There are ${nSheets} Job Sheets associated with this customer`)
+    throw new Error(`There are ${nSheets} Jobsheet(s) associated with this customer`)
   }
 
   // if customer has no sheets, start by deleting addresses
@@ -179,6 +179,47 @@ CustomerHandler.prototype.remove = async (args) => {
   let customerReturn
   try {
     customerReturn = await Customer.deleteOne({ _id: id })
+  } catch (e) {
+    throw new Error(e)
+  }
+  return customerReturn
+}
+
+CustomerHandler.prototype.toggleActive = async (args) => {
+  const { id } = args
+  const customerID = mongoose.Types.ObjectId(id)
+
+  let cust
+  try {
+    cust = await Customer.findById(id, { active: 1 })
+  } catch (e) {
+    throw new Error(e)
+  }
+
+  let customerReturn
+  try {
+    customerReturn = await Customer.findOneAndUpdate(
+      { _id: customerID },
+      { active: !cust.active },
+      { new: true },
+    )
+  } catch (e) {
+    throw new Error(e)
+  }
+  return customerReturn
+}
+
+CustomerHandler.prototype.persistNotes = async (args) => {
+  const { id, notes } = args
+  const customerID = mongoose.Types.ObjectId(id)
+
+  let customerReturn
+  try {
+    customerReturn = await Customer.findOneAndUpdate(
+      { _id: customerID },
+      { notes },
+      { new: true },
+    )
   } catch (e) {
     throw new Error(e)
   }

@@ -78,6 +78,7 @@ Resources:
           createdAt: String
           email: String
           name: CustomerName!
+          notes: String
           phones: [CustomerPhone]
           updatedAt: String
         }
@@ -270,6 +271,21 @@ Resources:
           features: String
         }
 
+        type Payment {
+          _id: ID!
+          amount: Float
+          quoteID: ID
+          type: String
+          createdAt: String
+          updatedAt: String
+        }
+        input PaymentInput {
+          _id: ID
+          amount: Float!
+          quoteID: ID!
+          type: String!
+        }
+
         type Product {
           _id: ID!
           maxHeight: Int
@@ -382,6 +398,11 @@ Resources:
           itemSummary: ItemSummaryInput
           quotePrice: QuotePriceInput
           version: Int
+        }
+        input QuoteDiscountInput {
+          _id: ID!
+          discount: DiscountInput!
+          quotePrice: QuotePriceInput!
         }
         input DiscountInput {
           description: String
@@ -572,18 +593,26 @@ Resources:
         type Mutation {
           customerPersist(customerInput: CustomerInput!, addressInput: AddressInput): Customer
           customerRemove(id: ID!): DBResult
+          customerToggleActive(id: ID!): Customer
+          customerPersistNotes(id: ID!, notes: String!): Customer
 
           jobSheetPersist(jobSheetInput: JobSheetInput!, addressInput: AddressInput, addressID: ID): JobSheet
           jobSheetRemove(id: ID!): DBResult
           jobSheetPersistGroup(input: GroupInput!): JobSheetGroup
           jobSheetRemoveGroup(id: ID!): DBResult
+          jobSheetPersistFeatures(id: ID!, features: String!): JobSheet
           jobSheetPersistOther(input: OtherInput!): JobSheetOther
           jobSheetRemoveOther(id: ID!): DBResult
           jobSheetPersistWindow(input: WindowInput!): JobSheetWindow
           jobSheetRemoveWindow(id: ID!): DBResult
           
           quotePersist(input: QuoteInput!): Quote
+          quotePersistDiscount(input: QuoteDiscountInput!): Quote
           quoteRemove(id: ID!): DBResult
+          createInvoice(id: ID!): Quote
+
+          paymentPersist(input: PaymentInput!): Payment
+          paymentRemove(id: ID!): DBResult
         }
 
         type Query {
@@ -600,6 +629,8 @@ Resources:
           jobSheetGroup(groupID: ID!): JobSheetGroup
           jobSheetOther(otherID: ID!): JobSheetOther
           searchJobSheetsByCustomer(customerID: ID!): [JobSheet]
+          
+          payments(quoteID: ID!): [Payment]
           
           products: [Product]
           groupTypes: [GroupType]
@@ -648,6 +679,44 @@ Resources:
           "operation": "Invoke",
           "payload": {
             "field": "customerPersist",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverCustomerPersistNotes:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: customerPersistNotes
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "customerPersistNotes",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverCustomerToggleActive:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: customerToggleActive
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "customerToggleActive",
             "arguments": $utils.toJson($context.arguments)
           }
         }
@@ -800,6 +869,44 @@ Resources:
           "operation": "Invoke",
           "payload": {
             "field": "quotePersist",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverQuotePersistDiscount:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: quotePersistDiscount
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "quotePersistDiscount",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverCreateInvoice:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: createInvoice
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "createInvoice",
             "arguments": $utils.toJson($context.arguments)
           }
         }
@@ -995,6 +1102,25 @@ Resources:
         }
       ResponseMappingTemplate: $util.toJson($context.result)
 
+  AppSyncResolverJobSheetPersistFeatures:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: jobSheetPersistFeatures
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "jobSheetPersistFeatures",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
   AppSyncResolverJobSheetRemoveOther:
     Type: AWS::AppSync::Resolver
     DependsOn: AppSyncSchema
@@ -1028,6 +1154,63 @@ Resources:
           "operation": "Invoke",
           "payload": {
             "field": "searchJobSheetsByCustomer",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverPayments:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: payments
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "payments",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverPaymentPersist:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: paymentPersist
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "paymentPersist",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverPaymentRemove:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: paymentRemove
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "paymentRemove",
             "arguments": $utils.toJson($context.arguments)
           }
         }

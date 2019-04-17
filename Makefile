@@ -52,7 +52,8 @@ awsdeploy:
 	 		ParamAccountId=$(AWS_ACCOUNT_ID) \
 	 	  ParamProjectName=$(AWS_STACK_NAME) \
 			ParamKeyExpiration=$(EXPIRATION) \
-			ParamENV=$(ENV)
+			ParamENV=$(ENV) \
+			ParamAppBucket=$(APP_BUCKET_NAME)
 
 describe:
 	@aws cloudformation describe-stacks \

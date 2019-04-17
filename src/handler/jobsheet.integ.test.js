@@ -91,3 +91,14 @@ test('jobSheetRemove existing', async () => {
   expect(res.n).toEqual(1)
   expect(res.ok).toEqual(1)
 })
+
+test.only('jobSheet persist Features', async () => {
+  const features = 'AC Vinyl Windows (Darker)\nLow E & Argon Gas\nFull-frame Change 2 3/4" Fingerjoint Trim\nAluminum Capping\nComplete Garbage Removal\nInstalled Including HST'
+  const req = {
+    field: 'jobSheetPersistFeatures',
+    arguments: { id: jobSheetID, features },
+  }
+  const res = await Handler(req)
+  expect(res).toBeTruthy()
+  expect(res.features).toEqual(features)
+})

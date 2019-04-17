@@ -18,6 +18,8 @@ Parameters:
     Default: universal-api
   ParamENV:
     Type: String
+  ParamAppBucket:
+    Type: String
 
 Resources:
 
@@ -73,7 +75,6 @@ Resources:
             - ssm:GetParametersByPath
             Effect: Allow
             Resource: !Sub arn:aws:ssm:${AWS::Region}:${ParamAccountId}:parameter/${ParamENV}/${ParamSSMPath}*
-      #         # Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/prod/universal-api*
       - PolicyName: FunctionLogAccess
         PolicyDocument:
           Version: 2012-10-17
@@ -103,6 +104,16 @@ Resources:
             - ec2:DescribeNetworkInterfaces
             Effect: Allow
             Resource: '*'
+      - PolicyName: FunctionS3Access
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - s3:*
+            Effect: Allow
+            Resource: arn:aws:s3:::*
+            # Resource: 
+              # Fn::Sub: arn:aws:s3:::${ParamAppBucket}/*
 
 Outputs:
   LambdaARN:

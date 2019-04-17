@@ -166,32 +166,21 @@ JobSheetHandler.prototype.remove = async (args) => {
   return jsReturn
 }
 
+JobSheetHandler.prototype.persistFeatures = async (args) => {
+  const { id, features } = args
+  const jobsheetID = mongoose.Types.ObjectId(id)
 
-/* JobsheetHandler.prototype.remove = (req, reply) => {
-  const id = sanz(req.params.id)
-  const addressID = sanz(req.payload.addressID)
-
-  // First remove all types
-  const jsID = mongoose.Types.ObjectId(id)
-  const jsQ = { jobsheetID: jsID }
-  const aQ = { _id: mongoose.Types.ObjectId(addressID) }
-
-  // First check for any associated quotes
-  const qts = Quote.find({ jobsheetID: id }).exec()
-  qts.then(res => {
-    if (res.length > 0) {
-      return reply(Boom.badRequest(`Your request cannot be completed as there are ${res.length} quotes associated with this jobsheet.`))
-    } else {
-      Promise.all([
-        Address.remove(aQ).exec(),
-        Jobsheet.remove({ _id: jsID }).exec(),
-        JobSheetOther.remove(jsQ).exec(),
-        JobSheetWindow.remove(jsQ).exec(),
-        JobSheetWindowGroup.remove(jsQ).exec(),
-      ]).then(() => reply({ responseOk: true, id: id }).code(200))
-        .catch(err => reply(Boom.badRequest(err)))
-    }
-  })
-} */
+  let jsReturn
+  try {
+    jsReturn = await JobSheet.findOneAndUpdate(
+      { _id: jobsheetID },
+      { features },
+      { new: true },
+    )
+  } catch (e) {
+    throw new Error(e)
+  }
+  return jsReturn
+}
 
 module.exports = JobSheetHandler

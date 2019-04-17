@@ -5,6 +5,7 @@ import JobSheetOther from './jobsheet-other'
 import JobSheetGroup from './jobsheet-group'
 import GroupTypes from './group-type'
 import Address from './address'
+import Payment from './payment'
 import Product from './product'
 import Quote from './quote'
 
@@ -36,6 +37,14 @@ const handlerMap = {
   customerRemove: {
     model: Customer,
     method: 'remove',
+  },
+  customerToggleActive: {
+    model: Customer,
+    method: 'toggleActive',
+  },
+  customerPersistNotes: {
+    model: Customer,
+    method: 'persistNotes',
   },
   searchCustomer: {
     model: Customer,
@@ -93,9 +102,25 @@ const handlerMap = {
     model: JobSheetWindow,
     method: 'remove',
   },
+  jobSheetPersistFeatures: {
+    model: JobSheet,
+    method: 'persistFeatures',
+  },
   groupTypes: {
     model: GroupTypes,
     method: 'find',
+  },
+  payments: {
+    model: Payment,
+    method: 'find',
+  },
+  paymentPersist: {
+    model: Payment,
+    method: 'persist',
+  },
+  paymentRemove: {
+    model: Payment,
+    method: 'remove',
   },
   pdfSignedURL: {
     model: Quote,
@@ -117,19 +142,19 @@ const handlerMap = {
     model: Quote,
     method: 'persist',
   },
+  quotePersistDiscount: {
+    model: Quote,
+    method: 'persistDiscount',
+  },
   quoteRemove: {
     model: Quote,
     method: 'remove',
   },
+  createInvoice: {
+    model: Quote,
+    method: 'createInvoice',
+  },
 }
-
-/* const thundra = require('@thundra/core')(
-  { apiKey: 'b41775a3-4be7-4bbc-8106-ef649370ad63' }
-)
-
-exports.handler = thundra((req) => {
-  callback(null, "Hello Thundra!"});
-}); */
 
 async function Handler(req, cfg) {
   const { method, model: MapClass } = handlerMap[req.field]
