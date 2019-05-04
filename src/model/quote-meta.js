@@ -29,6 +29,15 @@ quoteMetaSchema.static('fetchNextQuoteNum', function unFunc(callback) {
   )
 })
 
+quoteMetaSchema.static('fetchNextJobSheetNum', function unFunc(callback) {
+  return this.findOneAndUpdate(
+    { name: 'jobsheetNumber' },
+    { $inc: { value: 1 } },
+    { new: true, fields: { value: true, _id: false } },
+    callback
+  )
+})
+
 const QuoteMeta = mongoose.model('QuoteMeta', quoteMetaSchema)
 
 module.exports = QuoteMeta

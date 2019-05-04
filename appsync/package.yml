@@ -154,7 +154,7 @@ Resources:
         \ location: String\n  options: String\n}\n\ninput GroupInput {\n  _id: ID\n\
         \  jobsheetID: ID!\n  costs: GroupCostsInput\n  dims: GroupHWDimsInput\n \
         \ items: [GroupItemInput]\n  qty: Int\n  rooms: [String]\n  specs: GroupSpecsInput\n\
-        }\ninput GroupCostsInput {\n  discounted: Float\n  discountedAmount: Float\n\
+        }\ninput GroupCostsInput {\n  discounted: Float\n  discountAmount: Float\n\
         \  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\
         \ Float\n  netUnit: Float\n  options: Float\n  trim: Float\n  windows: Float\n\
         }\ninput GroupHWDimsInput {\n  height: GroupDimsInput\n  width: GroupDimsInput\n\
@@ -188,7 +188,7 @@ Resources:
         \  jobSheetData(jobSheetID: ID!): JobSheetData\n  jobSheetWindow(windowID:\
         \ ID!): JobSheetWindow\n  jobSheetGroup(groupID: ID!): JobSheetGroup\n  jobSheetOther(otherID:\
         \ ID!): JobSheetOther\n  searchJobSheetsByCustomer(customerID: ID!): [JobSheet]\n\
-        \  \n  payments(quoteID: ID!): [Payment]\n  products: [Product]\n  groupTypes:\
+        \  \n  payments(quoteID: ID!): [Payment]\n  \n  products: [Product]\n  groupTypes:\
         \ [GroupType]\n}\n"
   AppSyncDataSource:
     Type: AWS::AppSync::DataSource

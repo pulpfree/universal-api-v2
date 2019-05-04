@@ -1,6 +1,8 @@
 /* eslint no-underscore-dangle: 0 */
 // import mongoose from 'mongoose'
 
+import { savePDF } from '../utils'
+
 const Payment = require('../model/payment')
 const Quote = require('../model/quote')
 
@@ -24,7 +26,6 @@ async function updateQuotePayment(quoteID) {
     throw new Error(e)
   }
 
-  if (payments.length <= 0) return false
   const payTotal = payments.reduce((accum, curVal) => accum + curVal.amount, 0.00)
 
   const quotePrice = Object.assign({}, quote.quotePrice)
@@ -57,9 +58,10 @@ PaymentHandler.prototype.find = async (args) => {
   return payments
 }
 
-PaymentHandler.prototype.persist = async (args) => {
+PaymentHandler.prototype.persist = async (args, cfg) => {
   const { input } = args
   let paymentReturn
+  const { quoteID } = input
 
   try {
     if (input._id) {
@@ -75,15 +77,21 @@ PaymentHandler.prototype.persist = async (args) => {
     throw new Error(e)
   }
   await updateQuotePayment(paymentReturn.quoteID)
+  const pdfArgs = {
+    quoteID,
+    docType: 'invoice',
+  }
+  savePDF(pdfArgs, cfg)
   return paymentReturn
 }
 
-PaymentHandler.prototype.remove = async (args) => {
+PaymentHandler.prototype.remove = async (args, cfg) => {
   const { id } = args
   let paymentReturn
 
   // fetch payment
   const payment = await Payment.findById(id)
+  const { quoteID } = payment
 
   // remove payment
   try {
@@ -91,7 +99,12 @@ PaymentHandler.prototype.remove = async (args) => {
   } catch (e) {
     throw new Error(e)
   }
-  await updateQuotePayment(payment.quoteID)
+  await updateQuotePayment(quoteID)
+  const pdfArgs = {
+    quoteID,
+    docType: 'invoice',
+  }
+  savePDF(pdfArgs, cfg)
   return paymentReturn
 }
 

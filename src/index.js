@@ -3,7 +3,7 @@ import mongoose from './mongo/connect'
 import Handler from './handler/handler'
 
 const thundra = require('@thundra/core')({
-  apiKey: 'b41775a3-4be7-4bbc-8106-ef649370ad63',
+  apiKey: '8b0908a6-137e-4147-ab99-0b4348d40c10',
 })
 
 let db

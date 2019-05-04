@@ -533,7 +533,7 @@ Resources:
         }
         input GroupCostsInput {
           discounted: Float
-          discountedAmount: Float
+          discountAmount: Float
           extendTotal: Float
           extendUnit: Float
           install: Float

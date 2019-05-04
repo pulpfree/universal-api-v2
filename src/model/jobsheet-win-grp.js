@@ -14,8 +14,8 @@ const jobsheetWindowGroupSchema = new Schema(
       ref: 'Jobsheet',
     },
     costs: {
-      discountAmount: { default: null, type: Number },
-      discounted: { default: null, type: Number },
+      discountAmount: { default: 0.00, type: Number },
+      discounted: { default: 0.00, type: Number },
       extendTotal: { default: 0.00, type: Number },
       extendUnit: { default: 0.00, type: Number },
       install: { default: 0.00, type: Number },

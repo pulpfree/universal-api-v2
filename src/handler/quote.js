@@ -5,6 +5,8 @@ import ramda from 'ramda'
 import fetch from 'node-fetch'
 import AWS from 'aws-sdk'
 
+import { savePDF, saveWrkShtPDF } from '../utils'
+
 const Address = require('../model/address')
 const Quote = require('../model/quote')
 const QuoteMeta = require('../model/quote-meta')
@@ -39,19 +41,6 @@ async function fetchAddress(addressID) {
     throw new Error(e)
   }
   return address
-}
-
-async function savePDF(args, cfg) {
-  const url = cfg.PDFSaveURI
-  try {
-    await fetch(url, {
-      method: 'post',
-      body: JSON.stringify(args),
-      headers: { 'Content-Type': 'application/json' },
-    })
-  } catch (e) {
-    throw new Error(e)
-  }
 }
 
 // todo: nice if there was a way to authenticate without using accessKeyId and screenAccessKey
@@ -236,6 +225,7 @@ QuoteHandler.prototype.remove = async (args, cfg) => {
 
   if (quote.invoiced) {
     deletePDFs({ docType: 'invoice', number: quote.number }, cfg)
+    deletePDFs({ docType: 'worksheet', number: quote.number }, cfg)
     await Quote.findOneAndUpdate(
       { _id: mongoose.Types.ObjectId(id) },
       { invoiced: false },
@@ -292,6 +282,12 @@ QuoteHandler.prototype.createInvoice = async (args, cfg) => {
     docType: 'invoice',
   }
   await savePDF(pdfArgs, cfg)
+  const wrkShtArgs = {
+    quoteID: id,
+    docType: 'invoice',
+  }
+  saveWrkShtPDF(wrkShtArgs, cfg)
+
   return Quote.findOneAndUpdate(
     { _id: mongoose.Types.ObjectId(id) },
     { invoiced: true, 'quotePrice.outstanding': quote.quotePrice.total },

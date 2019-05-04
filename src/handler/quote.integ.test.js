@@ -10,8 +10,8 @@ import db from '../mongo/connect'
 
 const quoteID = '5b19e0c62aac0409e37ec013' // closed quote with payments etc
 const quoteIDInv = '5c880187b5342edbda202712' // invoiced quote
-const quoteIDdel = '5c9bdeb506e4fe483fb1b3f6' // quote to delete
-const quoteIDCreateInvoice = '5c9bdce2962b5d8234c0fc8c'
+const quoteIDdel = '5c6f1e44d30c2756139c706b' // quote to delete
+const quoteIDCreateInvoice = '5c6f1e44d30c2756139c706b'
 const customerID = '5b1846c62aac040faf7ebfe7'
 
 const quoteNew = {
@@ -151,7 +151,7 @@ test('quoteRemove newID', async () => {
   // expect(res.ok).toEqual(1)
 }) */
 
-test('quoteRemove basic', async () => {
+test.only('quoteRemove basic', async () => {
   const req = {
     field: 'quoteRemove',
     arguments: { id: quoteIDdel },
@@ -181,7 +181,7 @@ test('pdfCreateURL', async () => {
   expect(res.data.url).toEqual(expect.stringMatching(/^https:\/\/ca-universalwindows.s3.ca-central-1.amazonaws.com\/quote\/qte-1083-r1.pdf/))
 })
 
-test('createInvoice', async () => {
+test.only('createInvoice', async () => {
   const req = {
     field: 'createInvoice',
     arguments: { id: quoteIDCreateInvoice },
@@ -191,7 +191,7 @@ test('createInvoice', async () => {
   expect(res.invoiced).toEqual(true)
 })
 
-test.only('persist discount', async () => {
+test('persist discount', async () => {
   // base itemCosts.subtotal is 3700
   const input = {
     _id: quoteIDInv,

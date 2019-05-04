@@ -13,6 +13,11 @@ const jobsheetSchema = new Schema(
       ref: 'Address',
     },
     features: String,
+    number: {
+      type: Number,
+      index: true,
+      required: true,
+    },
   },
   {
     timestamps: true,
