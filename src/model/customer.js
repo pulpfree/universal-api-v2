@@ -49,6 +49,7 @@ const customerSchema = new Schema(
         type: String,
         minlength: 2,
         maxlength: 35,
+        default: '',
       },
       prefix: String,
     },

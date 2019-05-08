@@ -46,11 +46,9 @@ const jobsheetWindowGroupSchema = new Schema(
     },
     rooms: Array,
     specs: {
-      groupID: String,
-      groupIDs: String,
-      groupType: {
-        type: Schema.Types.ObjectId,
-        ref: 'GroupType',
+      groupTypeDescription: {
+        type: String,
+        required: true,
       },
       installType: String,
       options: String,

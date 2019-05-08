@@ -1,7 +1,6 @@
 /* eslint no-underscore-dangle: 0 */
 import mongoose from 'mongoose'
 import sanz from 'mongo-sanitize'
-// import ramda from 'ramda'
 
 const Address = require('../model/address')
 const JobSheet = require('../model/jobsheet')
@@ -10,6 +9,8 @@ const JobSheetWindow = require('../model/jobsheet-win')
 const JobSheetWindowGroup = require('../model/jobsheet-win-grp')
 const Product = require('../model/product')
 const Quote = require('../model/quote')
+const QuoteMeta = require('../model/quote-meta')
+
 
 function JobSheetHandler() { }
 
@@ -83,6 +84,14 @@ JobSheetHandler.prototype.persist = async (args) => {
   if (!addressInput && !addressID) {
     throw new Error('Missing address or addressID for jobsheet')
   }
+
+  let jsNum
+  try {
+    jsNum = await QuoteMeta.fetchNextJobSheetNum()
+  } catch (e) {
+    throw new Error(e)
+  }
+  jobSheet.number = jsNum.value
 
   // if address object submitted, then we're creating a new address for this jobsheet
   if (addressInput) {

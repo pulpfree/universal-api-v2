@@ -23,7 +23,7 @@ Resources:
   Lambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://universal-api-v2/lambda/1059d861c2eb866406a941f9369c6318
+      CodeUri: s3://universal-api-v2/lambda/6bffce19132a28438494caa3aab6df97
       Handler: index.handler
       MemorySize: 1024
       Runtime: nodejs8.10

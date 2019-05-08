@@ -1,5 +1,4 @@
 /* eslint no-underscore-dangle: 0 */
-// import mongoose from 'mongoose'
 
 import { savePDF } from '../utils'
 
@@ -32,10 +31,15 @@ async function updateQuotePayment(quoteID) {
   quotePrice.outstanding = parseFloat(quotePrice.total - payTotal)
   quotePrice.payments = payTotal
 
+  let closed = false
+  if (quotePrice.outstanding <= 0) {
+    closed = true
+  }
+
   try {
     quote = await Quote.findOneAndUpdate(
       { _id: quoteID },
-      { quotePrice },
+      { quotePrice, closed },
       { new: true }
     )
   } catch (e) {

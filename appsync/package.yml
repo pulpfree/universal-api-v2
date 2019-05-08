@@ -58,9 +58,9 @@ Resources:
         }\ninput CustomerNameInput {\n  first: String!\n  last: String!\n  spouse:\
         \ String\n}\ninput CustomerPhoneInput {\n  _id: PhoneType!\n  countryCode:\
         \ String\n  number: String!\n}\n\ntype JobSheet {\n  _id: ID!\n  addressID:\
-        \ Address\n  customerID: Customer\n  features: String\n  createdAt: String\n\
-        \  updatedAt: String\n}\ntype JobSheetData {\n  jobsheet: JobSheet\n  windows:\
-        \ [JobSheetWindow]\n  groups: [JobSheetGroup]\n  other: [JobSheetOther]\n\
+        \ Address\n  customerID: Customer\n  features: String\n  number: Int!\n  createdAt:\
+        \ String\n  updatedAt: String\n}\ntype JobSheetData {\n  jobsheet: JobSheet\n\
+        \  windows: [JobSheetWindow]\n  groups: [JobSheetGroup]\n  other: [JobSheetOther]\n\
         }\n\ntype JobSheetWindow {\n  _id: ID!\n  costs: JobSheetItemCosts\n  dims:\
         \ JobSheetWindowDims\n  jobsheetID: ID\n  productID: Product\n  qty: Int\n\
         \  rooms: [String]\n  specs: JobSheetWindowSpecs\n  createdAt: String\n  updatedAt:\
@@ -80,11 +80,10 @@ Resources:
         \ {\n  discounted: Float\n  discountedAmount: Float\n  extendTotal: Float\n\
         \  extendUnit: Float\n  install: Float\n  installType: Float\n  netUnit: Float\n\
         \  options: Float\n  trim: Float\n  windows: Float\n}\ntype JobSheetGroupSpecs\
-        \ {\n  groupID: String\n  groupType: JobSheetGroupType\n  installType: String\n\
-        \  options: String\n  sqft: Int\n  style: String\n  trim: String\n}\ntype\
-        \ JobSheetGroupType {\n  _id: ID\n  name: String\n}\ntype JobSheetGroupItem\
-        \ {\n  _id: ID\n  costs: GroupItemCosts\n  dims: GroupItemDims\n  qty: Int\n\
-        \  product: Product\n  productID: ID\n  specs: GroupItemSpecs\n}\ntype GroupItemCosts\
+        \ {\n  groupTypeDescription: String\n  installType: String\n  options: String\n\
+        \  sqft: Int\n  style: String\n  trim: String\n}\ntype JobSheetGroupItem {\n\
+        \  _id: ID\n  costs: GroupItemCosts\n  dims: GroupItemDims\n  qty: Int\n \
+        \ product: Product\n  productID: ID\n  specs: GroupItemSpecs\n}\ntype GroupItemCosts\
         \ {\n  extendUnit: Float\n  extendTotal: Float\n}\ntype GroupItemDims {\n\
         \  height: WindowDims\n  width: WindowDims\n}\ntype GroupItemSpecs {\n  extendSqft:\
         \ Int\n  options: String,\n  overSize: Int\n  sqft: Int\n}\n\ntype JobSheetOther\
@@ -99,68 +98,67 @@ Resources:
         \ Product {\n  _id: ID!\n  maxHeight: Int\n  maxWidth: Int\n  minHeight: Int\n\
         \  minWidth: Int\n  name: String!\n  premium: ProductPremium\n  sizeCost:\
         \ AWSJSON\n}\ntype ProductPremium {\n  cost: Int\n  oversizeLimit: Int\n}\n\
-        type GroupType {\n  _id: ID!\n  name: String\n}\ntype Quote {\n  _id: ID!\n\
-        \  closed: Boolean!\n  customerID: Customer\n  deposit: Boolean!\n  discount:\
-        \ QuoteDiscount\n  invoiced: Boolean!\n  items: QuoteItems\n  itemCosts: QuoteItemCosts\n\
-        \  itemSummary: QuoteItemSummary\n  jobsheetID: JobSheet\n  number: Int!\n\
-        \  pdfCreated: Boolean!\n  quotePrice: QuotePrice\n  version: Int!\n  createdAt:\
-        \ String\n  updatedAt: String\n}\ntype QuotePrice {\n  outstanding: Float\n\
-        \  payments: Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ntype\
-        \ QuoteDiscount {\n  description: String\n  discount: Float\n  subtotal: Float\n\
-        \  tax: Float\n  total: Float\n}\ntype QuoteItems {\n  group: [String]\n \
-        \ other: [String]\n  window: [String]\n}\ntype QuoteItemCosts {\n  group:\
-        \ Float\n  other: Float\n  subtotal: Float\n  window: Float\n}\ntype QuoteItemSummary\
-        \ {\n  group: QuoteItemSummaryDetails\n  other: QuoteItemSummaryDetails\n\
-        \  window: QuoteItemSummaryDetails\n}\ntype QuoteItemSummaryDetails {\n  items:\
-        \ [QuoteItemSummaryItems]\n  totals: QuoteItemSummaryExtendTotal\n}\ntype\
-        \ QuoteItemSummaryItems {\n  costs: QuoteItemSummaryCosts\n  description:\
-        \ String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\ntype QuoteItemSummaryExtendTotal\
-        \ {\n  extendTotal: Float\n}\ntype QuoteItemSummaryCosts {\n  extendTotal:\
-        \ Float\n  extendUnit: Float\n  netUnit: Float\n}\ntype Quotes { \n  quotes:\
-        \ [Quote]!\n  totalInvoiced: Float\n  totalOutstanding: Float\n}\ntype PDFSignedURL\
-        \ {\n  code: Int\n  data: SignedURLData\n  message: String\n  status: String\n\
-        \  timestamp: Int\n}\ntype SignedURLData {\n  url: String\n}\n\ninput QuoteInput\
-        \ {\n  _id: ID\n  customerID: ID!\n  jobsheetID: ID!\n  discount: DiscountInput\n\
-        \  features: String\n  items: ItemsInput\n  itemCosts: ItemCostsInput\n  itemSummary:\
-        \ ItemSummaryInput\n  quotePrice: QuotePriceInput\n  version: Int\n}\ninput\
-        \ QuoteDiscountInput {\n  _id: ID!\n  discount: DiscountInput!\n  quotePrice:\
-        \ QuotePriceInput!\n}\ninput DiscountInput {\n  description: String\n  discount:\
-        \ Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ninput ItemsInput\
-        \ {\n  group: [String]\n  other: [String]\n  window: [String]\n}\ninput ItemCostsInput\
-        \ {\n  group: Float\n  other: Float\n  subtotal: Float\n  window: Float\n\
-        }\ninput ItemSummaryInput {\n  group: ItemSummaryDetailsInput\n  other: ItemSummaryDetailsInput\n\
-        \  window: ItemSummaryDetailsInput\n}\ninput ItemSummaryDetailsInput {\n \
-        \ items: [ItemSummaryItemsInput]\n  totals: ItemSummaryExtendTotalInput\n\
-        }\ninput ItemSummaryExtendTotalInput {\n  extendTotal: Float\n}\ninput ItemSummaryItemsInput\
-        \ {\n  costs: ItemSummaryCostsInput\n  description: String\n  qty: Int\n \
-        \ rooms: String\n  specs: AWSJSON\n}\ninput ItemSummaryCostsInput {\n  extendTotal:\
-        \ Float\n  extendUnit: Float\n  netUnit: Float\n}\ninput QuotePriceInput {\n\
-        \  outstanding: Float\n  payments: Float\n  subtotal: Float\n  tax: Float\n\
-        \  total: Float\n}\ninput SignedURLInput {\n  number: Int!\n  type: String!\n\
-        \  version: Int\n}\n\ninput WindowInput {\n  _id: ID\n  costs: WindowCostsInput\n\
-        \  dims: WindowHWDimsInput\n  jobsheetID: ID!\n  productID: ID!\n  qty: Int\n\
-        \  rooms: [String]\n  specs: WindowSpecsInput\n}\ninput WindowCostsInput {\n\
-        \  discounted: Float\n  discountedAmount: Float\n  extendTotal: Float\n  extendUnit:\
-        \ Float\n  install: Float\n  installType: Float\n  netUnit: Float\n  options:\
-        \ Float\n  trim: Float\n  window: Float\n}\ninput WindowHWDimsInput {\n  height:\
-        \ WindowDimsInput\n  width: WindowDimsInput\n}\ninput WindowDimsInput {\n\
-        \  decimal: Float\n  fraction: String\n  inch: Int\n  overSize: Int\n  round:\
-        \ Int\n  underSize: Int\n}\ninput WindowSpecsInput {\n  extendSqft: Int\n\
-        \  installType: String\n  options: String\n  overSize: Int\n  sqft: Int\n\
-        \  trim: String\n}\n\ninput OtherInput {\n  _id: ID\n  costs: OtherCostsInput\n\
-        \  description: String\n  jobsheetID: ID\n  product: String\n  qty: Int\n\
-        \  rooms: [String]\n  specs: OtherSpecsInput\n}\ninput OtherCostsInput {\n\
-        \  extendUnit: Float\n  extendTotal: Float\n}\ninput OtherSpecsInput {\n \
-        \ location: String\n  options: String\n}\n\ninput GroupInput {\n  _id: ID\n\
-        \  jobsheetID: ID!\n  costs: GroupCostsInput\n  dims: GroupHWDimsInput\n \
-        \ items: [GroupItemInput]\n  qty: Int\n  rooms: [String]\n  specs: GroupSpecsInput\n\
+        \ntype Quote {\n  _id: ID!\n  closed: Boolean!\n  customerID: Customer\n \
+        \ deposit: Boolean!\n  discount: QuoteDiscount\n  invoiced: Boolean!\n  items:\
+        \ QuoteItems\n  itemCosts: QuoteItemCosts\n  itemSummary: QuoteItemSummary\n\
+        \  jobsheetID: JobSheet\n  number: Int!\n  pdfCreated: Boolean!\n  quotePrice:\
+        \ QuotePrice\n  version: Int!\n  createdAt: String\n  updatedAt: String\n\
+        }\ntype QuotePrice {\n  outstanding: Float\n  payments: Float\n  subtotal:\
+        \ Float\n  tax: Float\n  total: Float\n}\ntype QuoteDiscount {\n  description:\
+        \ String\n  discount: Float\n  subtotal: Float\n  tax: Float\n  total: Float\n\
+        }\ntype QuoteItems {\n  group: [String]\n  other: [String]\n  window: [String]\n\
+        }\ntype QuoteItemCosts {\n  group: Float\n  other: Float\n  subtotal: Float\n\
+        \  window: Float\n}\ntype QuoteItemSummary {\n  group: QuoteItemSummaryDetails\n\
+        \  other: QuoteItemSummaryDetails\n  window: QuoteItemSummaryDetails\n}\n\
+        type QuoteItemSummaryDetails {\n  items: [QuoteItemSummaryItems]\n  totals:\
+        \ QuoteItemSummaryExtendTotal\n}\ntype QuoteItemSummaryItems {\n  costs: QuoteItemSummaryCosts\n\
+        \  description: String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\n\
+        type QuoteItemSummaryExtendTotal {\n  extendTotal: Float\n}\ntype QuoteItemSummaryCosts\
+        \ {\n  extendTotal: Float\n  extendUnit: Float\n  netUnit: Float\n}\ntype\
+        \ Quotes { \n  quotes: [Quote]!\n  totalInvoiced: Float\n  totalOutstanding:\
+        \ Float\n}\ntype PDFSignedURL {\n  code: Int\n  data: SignedURLData\n  message:\
+        \ String\n  status: String\n  timestamp: Int\n}\ntype SignedURLData {\n  url:\
+        \ String\n}\n\ninput QuoteInput {\n  _id: ID\n  customerID: ID!\n  jobsheetID:\
+        \ ID!\n  discount: DiscountInput\n  features: String\n  items: ItemsInput\n\
+        \  itemCosts: ItemCostsInput\n  itemSummary: ItemSummaryInput\n  quotePrice:\
+        \ QuotePriceInput\n  version: Int\n}\ninput QuoteDiscountInput {\n  _id: ID!\n\
+        \  discount: DiscountInput!\n  quotePrice: QuotePriceInput!\n}\ninput DiscountInput\
+        \ {\n  description: String\n  discount: Float\n  subtotal: Float\n  tax: Float\n\
+        \  total: Float\n}\ninput ItemsInput {\n  group: [String]\n  other: [String]\n\
+        \  window: [String]\n}\ninput ItemCostsInput {\n  group: Float\n  other: Float\n\
+        \  subtotal: Float\n  window: Float\n}\ninput ItemSummaryInput {\n  group:\
+        \ ItemSummaryDetailsInput\n  other: ItemSummaryDetailsInput\n  window: ItemSummaryDetailsInput\n\
+        }\ninput ItemSummaryDetailsInput {\n  items: [ItemSummaryItemsInput]\n  totals:\
+        \ ItemSummaryExtendTotalInput\n}\ninput ItemSummaryExtendTotalInput {\n  extendTotal:\
+        \ Float\n}\ninput ItemSummaryItemsInput {\n  costs: ItemSummaryCostsInput\n\
+        \  description: String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\n\
+        input ItemSummaryCostsInput {\n  extendTotal: Float\n  extendUnit: Float\n\
+        \  netUnit: Float\n}\ninput QuotePriceInput {\n  outstanding: Float\n  payments:\
+        \ Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ninput SignedURLInput\
+        \ {\n  number: Int!\n  type: String!\n  version: Int\n}\n\ninput WindowInput\
+        \ {\n  _id: ID\n  costs: WindowCostsInput\n  dims: WindowHWDimsInput\n  jobsheetID:\
+        \ ID!\n  productID: ID!\n  qty: Int\n  rooms: [String]\n  specs: WindowSpecsInput\n\
+        }\ninput WindowCostsInput {\n  discounted: Float\n  discountedAmount: Float\n\
+        \  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\
+        \ Float\n  netUnit: Float\n  options: Float\n  trim: Float\n  window: Float\n\
+        }\ninput WindowHWDimsInput {\n  height: WindowDimsInput\n  width: WindowDimsInput\n\
+        }\ninput WindowDimsInput {\n  decimal: Float\n  fraction: String\n  inch:\
+        \ Int\n  overSize: Int\n  round: Int\n  underSize: Int\n}\ninput WindowSpecsInput\
+        \ {\n  extendSqft: Int\n  installType: String\n  options: String\n  overSize:\
+        \ Int\n  sqft: Int\n  trim: String\n}\n\ninput OtherInput {\n  _id: ID\n \
+        \ costs: OtherCostsInput\n  description: String\n  jobsheetID: ID\n  product:\
+        \ String\n  qty: Int\n  rooms: [String]\n  specs: OtherSpecsInput\n}\ninput\
+        \ OtherCostsInput {\n  extendUnit: Float\n  extendTotal: Float\n}\ninput OtherSpecsInput\
+        \ {\n  location: String\n  options: String\n}\n\ninput GroupInput {\n  _id:\
+        \ ID\n  costs: GroupCostsInput\n  dims: GroupHWDimsInput\n  items: [GroupItemInput]\n\
+        \  jobsheetID: ID!\n  qty: Int\n  rooms: [String]\n  specs: GroupSpecsInput\n\
         }\ninput GroupCostsInput {\n  discounted: Float\n  discountAmount: Float\n\
         \  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\
         \ Float\n  netUnit: Float\n  options: Float\n  trim: Float\n  windows: Float\n\
         }\ninput GroupHWDimsInput {\n  height: GroupDimsInput\n  width: GroupDimsInput\n\
         }\ninput GroupDimsInput {\n  decimal: Float\n  diff: Float\n  fraction: String\n\
-        \  inch: Int\n}\ninput GroupSpecsInput {\n  groupID: String\n  groupType:\
-        \ ID\n  installType: String\n  options: String\n  sqft: Int\n  style: String\n\
+        \  inch: Int\n}\ninput GroupSpecsInput {\n  groupTypeDescription: String\n\
+        \  installType: String\n  options: String\n  sqft: Int\n  style: String\n\
         \  trim: String\n}\ninput GroupItemInput {\n  _id: ID!\n  costs: GroupItemCostsInput\n\
         \  dims: WindowHWDimsInput\n  product: GroupItemProductInput\n  productID:\
         \ ID!\n  qty: Int\n  specs: GroupItemSpecsInput\n}\ninput GroupItemCostsInput\
@@ -188,8 +186,7 @@ Resources:
         \  jobSheetData(jobSheetID: ID!): JobSheetData\n  jobSheetWindow(windowID:\
         \ ID!): JobSheetWindow\n  jobSheetGroup(groupID: ID!): JobSheetGroup\n  jobSheetOther(otherID:\
         \ ID!): JobSheetOther\n  searchJobSheetsByCustomer(customerID: ID!): [JobSheet]\n\
-        \  \n  payments(quoteID: ID!): [Payment]\n  \n  products: [Product]\n  groupTypes:\
-        \ [GroupType]\n}\n"
+        \  \n  payments(quoteID: ID!): [Payment]\n  \n  products: [Product]\n}\n"
   AppSyncDataSource:
     Type: AWS::AppSync::DataSource
     Properties:
@@ -762,24 +759,6 @@ Resources:
         - Name
       RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
         : \"Invoke\",\n  \"payload\": {\n    \"field\": \"products\",\n    \"arguments\"\
-        : $utils.toJson($context.arguments)\n  }\n}\n"
-      ResponseMappingTemplate: $util.toJson($context.result)
-  AppSyncResolverGroupTypes:
-    Type: AWS::AppSync::Resolver
-    DependsOn: AppSyncSchema
-    Properties:
-      ApiId:
-        Fn::GetAtt:
-        - AppSyncAPI
-        - ApiId
-      TypeName: Query
-      FieldName: groupTypes
-      DataSourceName:
-        Fn::GetAtt:
-        - AppSyncDataSource
-        - Name
-      RequestMappingTemplate: "{\n  \"version\" : \"2017-02-28\",\n  \"operation\"\
-        : \"Invoke\",\n  \"payload\": {\n    \"field\": \"groupTypes\",\n    \"arguments\"\
         : $utils.toJson($context.arguments)\n  }\n}\n"
       ResponseMappingTemplate: $util.toJson($context.result)
   AppSyncResolverJobSheetPersistWindow:

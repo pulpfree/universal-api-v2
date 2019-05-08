@@ -228,7 +228,7 @@ QuoteHandler.prototype.remove = async (args, cfg) => {
     deletePDFs({ docType: 'worksheet', number: quote.number }, cfg)
     await Quote.findOneAndUpdate(
       { _id: mongoose.Types.ObjectId(id) },
-      { invoiced: false },
+      { invoiced: false, 'quotePrice.outstanding': 0 },
       { new: true }
     )
     return {

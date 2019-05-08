@@ -49,7 +49,7 @@ test('getJobSheetData', async () => {
   expect(res.other.length).toEqual(1)
 })
 
-test('jobSheetPersist new with Address', async () => {
+test.only('jobSheetPersist new with Address', async () => {
   delete jobSheetNew.addressID
   const req = {
     field: 'jobSheetPersist',
@@ -57,6 +57,7 @@ test('jobSheetPersist new with Address', async () => {
   }
   const res = await Handler(req)
   newID = res._id
+  console.log('newID:', newID)
   expect(res).toBeTruthy()
 })
 
@@ -92,7 +93,7 @@ test('jobSheetRemove existing', async () => {
   expect(res.ok).toEqual(1)
 })
 
-test.only('jobSheet persist Features', async () => {
+test('jobSheet persist Features', async () => {
   const features = 'AC Vinyl Windows (Darker)\nLow E & Argon Gas\nFull-frame Change 2 3/4" Fingerjoint Trim\nAluminum Capping\nComplete Garbage Removal\nInstalled Including HST'
   const req = {
     field: 'jobSheetPersistFeatures',

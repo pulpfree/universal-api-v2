@@ -65,12 +65,6 @@ const quoteSchema = new Schema(
       tax: Number,
       total: Number,
     },
-    s3Bucket: String,
-    s3Object: String,
-    pdfCreated: {
-      default: false,
-      type: Boolean,
-    },
     version: {
       default: 0,
       type: Number,

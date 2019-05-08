@@ -9,8 +9,8 @@ import db from '../mongo/connect'
 // to test just this file, run: yarn test:w src/handler/quote.integ.test.js
 
 const quoteID = '5b19e0c62aac0409e37ec013' // closed quote with payments etc
-const quoteIDInv = '5c880187b5342edbda202712' // invoiced quote
-const quoteIDdel = '5c6f1e44d30c2756139c706b' // quote to delete
+// const quoteIDInv = '5ccdfc868719aa50eb71837b' // invoiced quote
+const quoteIDdel = '5ccdfc868719aa50eb71837b' // quote to delete
 const quoteIDCreateInvoice = '5c6f1e44d30c2756139c706b'
 const customerID = '5b1846c62aac040faf7ebfe7'
 

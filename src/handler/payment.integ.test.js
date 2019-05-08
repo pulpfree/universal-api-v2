@@ -7,7 +7,7 @@ import db from '../mongo/connect'
 
 let cfg
 let newID
-const quoteID = '5b19e0c62aac0409e37ec013' // closed quote with payments etc
+const quoteID = '5c6f1e44d30c2756139c706b' // closed quote with payments etc
 
 beforeAll(async () => {
   process.env.Stage = 'test'
@@ -27,9 +27,10 @@ test('getPayments', async () => {
   expect(res[0].quoteID.toString()).toEqual(quoteID)
 })
 
-test('paymentPersist new', async () => {
+test.only('paymentPersist new', async () => {
   const paymentInput = {
     amount: 500,
+    // amount: 4705,
     quoteID,
     type: 'cheque',
   }
