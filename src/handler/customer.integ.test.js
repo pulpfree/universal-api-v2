@@ -12,7 +12,7 @@ import {
   customerUpdate,
 } from '../test/mockData'
 
-// to run just this dir, use: yarn jest --watch src/handler
+// to run just this dir, use: yarn jest src/handler/customer.integ.test.js
 // to test just this file, run: yarn test:w src/handler/customer.integ.test.js
 // occasionally we may want to clear the jest cache: yarn jest --clearCache
 
@@ -75,6 +75,22 @@ test('searchCustomerNameInActive', async () => {
     if (r.active === true) allFalse = false
   })
   expect(allFalse).toEqual(true)
+})
+
+test.only('searchPhones', async () => {
+  const req = {
+    field: 'searchCustomer',
+    arguments: {
+      field: 'phones.number',
+      // value: '(905)',
+      // value: '(905) 735',
+      value: '(905) 735-1340',
+    },
+  }
+  const res = await Handler(req)
+  // console.log('res:', res)
+  expect(res).toBeTruthy()
+  expect(res.length).toEqual(1)
 })
 
 test('searchAddress', async () => {
@@ -167,7 +183,7 @@ test('customer toggle active', async () => {
   expect(res.active).toEqual(!cRes.active)
 })
 
-test.only('persist notes', async () => {
+test('persist notes', async () => {
   const notes = 'New test notes for customer.\nNew line here.'
   const req = {
     field: 'customerPersistNotes',

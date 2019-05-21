@@ -9,6 +9,10 @@ export const addressNew = {
   street1: '47 Northgate Dr.',
   street2: null,
   type: 'res',
+  // location: {
+  //   type: 'Point',
+  //   coordinates: [-79.2576469, 43.0095132],
+  // },
 }
 
 export const addressUpdate = {
@@ -26,7 +30,7 @@ export const addressUpdate = {
 
 export const customerNew = {
   active: true,
-  email: 'test@webbtech.net',
+  email: 'test2@webbtech.net',
   name: {
     first: 'Test ',
     last: 'Dummy',

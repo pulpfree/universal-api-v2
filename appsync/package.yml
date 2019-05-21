@@ -46,12 +46,13 @@ Resources:
         \  countryCode: String\n  customerID: ID\n  postalCode: String\n  provinceCode:\
         \ String\n  street1: String\n  street2: String\n  type: String\n}\n\ninput\
         \ AddressInput {\n  _id: ID\n  associate: String!\n  city: String!\n  country:\
-        \ String\n  countryCode: String\n  customerID: ID\n  postalCode: String!\n\
-        \  provinceCode: String!\n  street1: String!\n  street2: String\n  type: String!\n\
-        }\n\ntype Customer {\n  _id: ID!\n  active: Boolean!\n  address: Address\n\
-        \  createdAt: String\n  email: String\n  name: CustomerName!\n  notes: String\n\
-        \  phones: [CustomerPhone]\n  updatedAt: String\n}\ntype CustomerName {\n\
-        \  first: String!\n  last: String!\n  spouse: String\n}\ntype CustomerPhone\
+        \ String\n  countryCode: String\n  customerID: ID\n  location: LocationInput\n\
+        \  postalCode: String!\n  provinceCode: String!\n  street1: String!\n  street2:\
+        \ String\n  type: String!\n}\ninput LocationInput {\n  type: String\n  coordinates:\
+        \ [Float]\n}\n\ntype Customer {\n  _id: ID!\n  active: Boolean!\n  address:\
+        \ Address\n  createdAt: String\n  email: String\n  name: CustomerName!\n \
+        \ notes: String\n  phones: [CustomerPhone]\n  updatedAt: String\n}\ntype CustomerName\
+        \ {\n  first: String!\n  last: String!\n  spouse: String\n}\ntype CustomerPhone\
         \ {\n  _id: PhoneType!\n  countryCode: String\n  number: String!\n}\nenum\
         \ PhoneType {\n  home\n  mobile\n}\n\ninput CustomerInput {\n  _id: ID\n \
         \ email: String\n  name: CustomerNameInput!\n  phones: [CustomerPhoneInput]\n\
@@ -101,56 +102,56 @@ Resources:
         \ntype Quote {\n  _id: ID!\n  closed: Boolean!\n  customerID: Customer\n \
         \ deposit: Boolean!\n  discount: QuoteDiscount\n  invoiced: Boolean!\n  items:\
         \ QuoteItems\n  itemCosts: QuoteItemCosts\n  itemSummary: QuoteItemSummary\n\
-        \  jobsheetID: JobSheet\n  number: Int!\n  pdfCreated: Boolean!\n  quotePrice:\
-        \ QuotePrice\n  version: Int!\n  createdAt: String\n  updatedAt: String\n\
-        }\ntype QuotePrice {\n  outstanding: Float\n  payments: Float\n  subtotal:\
-        \ Float\n  tax: Float\n  total: Float\n}\ntype QuoteDiscount {\n  description:\
-        \ String\n  discount: Float\n  subtotal: Float\n  tax: Float\n  total: Float\n\
-        }\ntype QuoteItems {\n  group: [String]\n  other: [String]\n  window: [String]\n\
-        }\ntype QuoteItemCosts {\n  group: Float\n  other: Float\n  subtotal: Float\n\
-        \  window: Float\n}\ntype QuoteItemSummary {\n  group: QuoteItemSummaryDetails\n\
-        \  other: QuoteItemSummaryDetails\n  window: QuoteItemSummaryDetails\n}\n\
-        type QuoteItemSummaryDetails {\n  items: [QuoteItemSummaryItems]\n  totals:\
-        \ QuoteItemSummaryExtendTotal\n}\ntype QuoteItemSummaryItems {\n  costs: QuoteItemSummaryCosts\n\
-        \  description: String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\n\
-        type QuoteItemSummaryExtendTotal {\n  extendTotal: Float\n}\ntype QuoteItemSummaryCosts\
-        \ {\n  extendTotal: Float\n  extendUnit: Float\n  netUnit: Float\n}\ntype\
-        \ Quotes { \n  quotes: [Quote]!\n  totalInvoiced: Float\n  totalOutstanding:\
-        \ Float\n}\ntype PDFSignedURL {\n  code: Int\n  data: SignedURLData\n  message:\
-        \ String\n  status: String\n  timestamp: Int\n}\ntype SignedURLData {\n  url:\
-        \ String\n}\n\ninput QuoteInput {\n  _id: ID\n  customerID: ID!\n  jobsheetID:\
-        \ ID!\n  discount: DiscountInput\n  features: String\n  items: ItemsInput\n\
-        \  itemCosts: ItemCostsInput\n  itemSummary: ItemSummaryInput\n  quotePrice:\
-        \ QuotePriceInput\n  version: Int\n}\ninput QuoteDiscountInput {\n  _id: ID!\n\
-        \  discount: DiscountInput!\n  quotePrice: QuotePriceInput!\n}\ninput DiscountInput\
-        \ {\n  description: String\n  discount: Float\n  subtotal: Float\n  tax: Float\n\
-        \  total: Float\n}\ninput ItemsInput {\n  group: [String]\n  other: [String]\n\
-        \  window: [String]\n}\ninput ItemCostsInput {\n  group: Float\n  other: Float\n\
-        \  subtotal: Float\n  window: Float\n}\ninput ItemSummaryInput {\n  group:\
-        \ ItemSummaryDetailsInput\n  other: ItemSummaryDetailsInput\n  window: ItemSummaryDetailsInput\n\
-        }\ninput ItemSummaryDetailsInput {\n  items: [ItemSummaryItemsInput]\n  totals:\
-        \ ItemSummaryExtendTotalInput\n}\ninput ItemSummaryExtendTotalInput {\n  extendTotal:\
-        \ Float\n}\ninput ItemSummaryItemsInput {\n  costs: ItemSummaryCostsInput\n\
-        \  description: String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\n\
-        input ItemSummaryCostsInput {\n  extendTotal: Float\n  extendUnit: Float\n\
-        \  netUnit: Float\n}\ninput QuotePriceInput {\n  outstanding: Float\n  payments:\
-        \ Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ninput SignedURLInput\
-        \ {\n  number: Int!\n  type: String!\n  version: Int\n}\n\ninput WindowInput\
-        \ {\n  _id: ID\n  costs: WindowCostsInput\n  dims: WindowHWDimsInput\n  jobsheetID:\
-        \ ID!\n  productID: ID!\n  qty: Int\n  rooms: [String]\n  specs: WindowSpecsInput\n\
-        }\ninput WindowCostsInput {\n  discounted: Float\n  discountedAmount: Float\n\
-        \  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\
-        \ Float\n  netUnit: Float\n  options: Float\n  trim: Float\n  window: Float\n\
-        }\ninput WindowHWDimsInput {\n  height: WindowDimsInput\n  width: WindowDimsInput\n\
-        }\ninput WindowDimsInput {\n  decimal: Float\n  fraction: String\n  inch:\
-        \ Int\n  overSize: Int\n  round: Int\n  underSize: Int\n}\ninput WindowSpecsInput\
-        \ {\n  extendSqft: Int\n  installType: String\n  options: String\n  overSize:\
-        \ Int\n  sqft: Int\n  trim: String\n}\n\ninput OtherInput {\n  _id: ID\n \
-        \ costs: OtherCostsInput\n  description: String\n  jobsheetID: ID\n  product:\
-        \ String\n  qty: Int\n  rooms: [String]\n  specs: OtherSpecsInput\n}\ninput\
-        \ OtherCostsInput {\n  extendUnit: Float\n  extendTotal: Float\n}\ninput OtherSpecsInput\
-        \ {\n  location: String\n  options: String\n}\n\ninput GroupInput {\n  _id:\
-        \ ID\n  costs: GroupCostsInput\n  dims: GroupHWDimsInput\n  items: [GroupItemInput]\n\
+        \  jobsheetID: JobSheet\n  number: Int!\n  quotePrice: QuotePrice\n  version:\
+        \ Int!\n  createdAt: String\n  updatedAt: String\n}\ntype QuotePrice {\n \
+        \ outstanding: Float\n  payments: Float\n  subtotal: Float\n  tax: Float\n\
+        \  total: Float\n}\ntype QuoteDiscount {\n  description: String\n  discount:\
+        \ Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ntype QuoteItems\
+        \ {\n  group: [String]\n  other: [String]\n  window: [String]\n}\ntype QuoteItemCosts\
+        \ {\n  group: Float\n  other: Float\n  subtotal: Float\n  window: Float\n\
+        }\ntype QuoteItemSummary {\n  group: QuoteItemSummaryDetails\n  other: QuoteItemSummaryDetails\n\
+        \  window: QuoteItemSummaryDetails\n}\ntype QuoteItemSummaryDetails {\n  items:\
+        \ [QuoteItemSummaryItems]\n  totals: QuoteItemSummaryExtendTotal\n}\ntype\
+        \ QuoteItemSummaryItems {\n  costs: QuoteItemSummaryCosts\n  description:\
+        \ String\n  qty: Int\n  rooms: String\n  specs: AWSJSON\n}\ntype QuoteItemSummaryExtendTotal\
+        \ {\n  extendTotal: Float\n}\ntype QuoteItemSummaryCosts {\n  extendTotal:\
+        \ Float\n  extendUnit: Float\n  netUnit: Float\n}\ntype Quotes { \n  quotes:\
+        \ [Quote]!\n  totalInvoiced: Float\n  totalOutstanding: Float\n}\ntype PDFSignedURL\
+        \ {\n  code: Int\n  data: SignedURLData\n  message: String\n  status: String\n\
+        \  timestamp: Int\n}\ntype SignedURLData {\n  url: String\n}\n\ninput QuoteInput\
+        \ {\n  _id: ID\n  customerID: ID!\n  jobsheetID: ID!\n  discount: DiscountInput\n\
+        \  features: String\n  items: ItemsInput\n  itemCosts: ItemCostsInput\n  itemSummary:\
+        \ ItemSummaryInput\n  quotePrice: QuotePriceInput\n  version: Int\n}\ninput\
+        \ QuoteDiscountInput {\n  _id: ID!\n  discount: DiscountInput!\n  quotePrice:\
+        \ QuotePriceInput!\n}\ninput DiscountInput {\n  description: String\n  discount:\
+        \ Float\n  subtotal: Float\n  tax: Float\n  total: Float\n}\ninput ItemsInput\
+        \ {\n  group: [String]\n  other: [String]\n  window: [String]\n}\ninput ItemCostsInput\
+        \ {\n  group: Float\n  other: Float\n  subtotal: Float\n  window: Float\n\
+        }\ninput ItemSummaryInput {\n  group: ItemSummaryDetailsInput\n  other: ItemSummaryDetailsInput\n\
+        \  window: ItemSummaryDetailsInput\n}\ninput ItemSummaryDetailsInput {\n \
+        \ items: [ItemSummaryItemsInput]\n  totals: ItemSummaryExtendTotalInput\n\
+        }\ninput ItemSummaryExtendTotalInput {\n  extendTotal: Float\n}\ninput ItemSummaryItemsInput\
+        \ {\n  costs: ItemSummaryCostsInput\n  description: String\n  qty: Int\n \
+        \ rooms: String\n  specs: AWSJSON\n}\ninput ItemSummaryCostsInput {\n  extendTotal:\
+        \ Float\n  extendUnit: Float\n  netUnit: Float\n}\ninput QuotePriceInput {\n\
+        \  outstanding: Float\n  payments: Float\n  subtotal: Float\n  tax: Float\n\
+        \  total: Float\n}\ninput SignedURLInput {\n  number: Int!\n  type: String!\n\
+        \  version: Int\n}\n\ninput WindowInput {\n  _id: ID\n  costs: WindowCostsInput\n\
+        \  dims: WindowHWDimsInput\n  jobsheetID: ID!\n  productID: ID!\n  qty: Int\n\
+        \  rooms: [String]\n  specs: WindowSpecsInput\n}\ninput WindowCostsInput {\n\
+        \  discounted: Float\n  discountedAmount: Float\n  extendTotal: Float\n  extendUnit:\
+        \ Float\n  install: Float\n  installType: Float\n  netUnit: Float\n  options:\
+        \ Float\n  trim: Float\n  window: Float\n}\ninput WindowHWDimsInput {\n  height:\
+        \ WindowDimsInput\n  width: WindowDimsInput\n}\ninput WindowDimsInput {\n\
+        \  decimal: Float\n  fraction: String\n  inch: Int\n  overSize: Int\n  round:\
+        \ Int\n  underSize: Int\n}\ninput WindowSpecsInput {\n  extendSqft: Int\n\
+        \  installType: String\n  options: String\n  overSize: Int\n  sqft: Int\n\
+        \  trim: String\n}\n\ninput OtherInput {\n  _id: ID\n  costs: OtherCostsInput\n\
+        \  description: String\n  jobsheetID: ID\n  product: String\n  qty: Int\n\
+        \  rooms: [String]\n  specs: OtherSpecsInput\n}\ninput OtherCostsInput {\n\
+        \  extendUnit: Float\n  extendTotal: Float\n}\ninput OtherSpecsInput {\n \
+        \ location: String\n  options: String\n}\n\ninput GroupInput {\n  _id: ID\n\
+        \  costs: GroupCostsInput\n  dims: GroupHWDimsInput\n  items: [GroupItemInput]\n\
         \  jobsheetID: ID!\n  qty: Int\n  rooms: [String]\n  specs: GroupSpecsInput\n\
         }\ninput GroupCostsInput {\n  discounted: Float\n  discountAmount: Float\n\
         \  extendTotal: Float\n  extendUnit: Float\n  install: Float\n  installType:\

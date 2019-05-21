@@ -6,6 +6,7 @@ const addressSchema = new Schema(
   {
     associate: {
       required: true,
+      index: true,
       type: String,
       validate: {
         validator: v => /^(customer|user|jobsheet)$/i.test(v),
@@ -36,6 +37,14 @@ const addressSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Customer',
     },
+    location: {
+      type: {
+        type: String,
+      },
+      coordinates: {
+        type: Array,
+      },
+    },
     postalCode: {
       required: true,
       trim: true,
@@ -53,6 +62,7 @@ const addressSchema = new Schema(
     },
     street1: {
       required: true,
+      index: true,
       trim: true,
       type: String,
     },

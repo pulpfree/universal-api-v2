@@ -6,6 +6,7 @@ import ramda from 'ramda'
 import Address from '../model/address'
 import Customer from '../model/customer'
 import JobSheet from '../model/jobsheet'
+import { phoneRegex } from '../utils'
 
 const CUSTOMER_LIMIT = 100
 
@@ -31,7 +32,12 @@ CustomerHandler.prototype.findOne = async (args) => {
 async function searchByField(args) {
   const { field } = args
   const str = sanz(args.value)
-  const regex = new RegExp(`^${str}`, 'i')
+  let regex
+  if (field === 'phones.number') {
+    regex = new RegExp(`${phoneRegex(str)}`)
+  } else {
+    regex = new RegExp(`^${str}`, 'i')
+  }
   const active = args.active !== undefined ? args.active : true
 
   const pipeline = [

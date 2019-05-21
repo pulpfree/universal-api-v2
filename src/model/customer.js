@@ -41,13 +41,13 @@ const customerSchema = new Schema(
       },
       last: {
         type: String,
+        index: true,
         required: true,
         minlength: 2,
         maxlength: 35,
       },
       spouse: {
         type: String,
-        minlength: 2,
         maxlength: 35,
         default: '',
       },

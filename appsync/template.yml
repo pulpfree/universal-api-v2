@@ -57,6 +57,11 @@ Resources:
           type: String
         }
 
+        type Location {
+          type: String
+          coordinates: [Float]
+        }
+
         input AddressInput {
           _id: ID
           associate: String!
@@ -64,11 +69,16 @@ Resources:
           country: String
           countryCode: String
           customerID: ID
+          location: LocationInput
           postalCode: String!
           provinceCode: String!
           street1: String!
           street2: String
           type: String!
+        }
+        input LocationInput {
+          type: String
+          coordinates: [Float]
         }
 
         type Customer {
@@ -309,7 +319,6 @@ Resources:
           itemSummary: QuoteItemSummary
           jobsheetID: JobSheet
           number: Int!
-          pdfCreated: Boolean!
           quotePrice: QuotePrice
           version: Int!
           createdAt: String
