@@ -232,5 +232,4 @@ test.only('nearbyJobs', async () => {
   const res = await Handler(req, cfg)
   expect(res).toBeTruthy()
   expect(res.length).toBeGreaterThan(5)
-  console.log('res.length:', res.length)
 })
