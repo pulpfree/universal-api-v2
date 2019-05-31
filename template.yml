@@ -29,13 +29,15 @@ Resources:
       CodeUri: ./build
       Handler: index.handler
       MemorySize: 1024
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Timeout: 12
       Tracing: Active
       Environment:
         Variables:
           NODE_ENV: production
           Stage: prod
+          thundra_agent_lambda_report_cloudwatch_enable: true
+          thundra_lambda_warmup_warmupAware: true
       Events:
         Api:
           Type: Api

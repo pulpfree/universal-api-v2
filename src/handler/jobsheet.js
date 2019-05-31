@@ -132,13 +132,15 @@ JobSheetHandler.prototype.remove = async (args) => {
     throw new Error(`There are ${nQuotes} Quotes associated with this Job Sheet`)
   }
 
-  // Fetch jobsheet so we can address
+  // Fetch jobsheet
   let jobSh
   try {
-    jobSh = JobSheet.findById(id)
+    jobSh = await JobSheet.findById(id)
   } catch (e) {
     throw new Error(e)
   }
+
+  // delete associated address records
   try {
     await Address.deleteOne({ _id: jobSh.addressID })
   } catch (e) {

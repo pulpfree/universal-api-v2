@@ -1,12 +1,6 @@
 /* eslint no-underscore-dangle: 0 */
-// import mongoose from 'mongoose'
-// import sanz from 'mongo-sanitize'
-// import ramda from 'ramda'
-
-// const GroupType = require('../model/group-type')
-const JobSheetGroup = require('../model/jobsheet-win-grp')
-// const JobSheetWindowGroupItem = require('../model/jobsheet-win-grp-item')
-// const Product = require('../model/product')
+import JobSheetGroup from '../model/jobsheet-win-grp'
+import Quote from '../model/quote'
 
 function JobSheetGroupHandler() { }
 
@@ -55,6 +49,19 @@ JobSheetGroupHandler.prototype.persist = async (args) => {
 JobSheetGroupHandler.prototype.remove = async (args) => {
   const { id } = args
   let groupReturn
+
+  // start by checking if window in existing quote
+  const q = { 'items.group': id }
+  let quoteReturn
+  try {
+    quoteReturn = await Quote.find(q).count()
+  } catch (e) {
+    throw new Error(e)
+  }
+  if (quoteReturn > 0) {
+    throw new Error(`There are ${quoteReturn} quotes using this item.`)
+  }
+
   try {
     groupReturn = JobSheetGroup.deleteOne({ _id: id })
   } catch (e) {

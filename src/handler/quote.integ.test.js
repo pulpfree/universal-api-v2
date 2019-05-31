@@ -9,7 +9,7 @@ import db from '../mongo/connect'
 // to test just this file, run: yarn test:w src/handler/quote.integ.test.js
 
 const quoteID = '5b19e0c62aac0409e37ec013' // closed quote with payments etc
-// const quoteIDInv = '5ccdfc868719aa50eb71837b' // invoiced quote
+const quoteIDInv = '5ccdfc868719aa50eb71837b' // invoiced quote÷å
 const quoteIDdel = '5ccdfc868719aa50eb71837b' // quote to delete
 const quoteIDCreateInvoice = '5c6f1e44d30c2756139c706b'
 const customerID = '5b1846c62aac040faf7ebfe7'
@@ -151,7 +151,7 @@ test('quoteRemove newID', async () => {
   // expect(res.ok).toEqual(1)
 }) */
 
-test.only('quoteRemove basic', async () => {
+test('quoteRemove basic', async () => {
   const req = {
     field: 'quoteRemove',
     arguments: { id: quoteIDdel },
@@ -181,7 +181,7 @@ test('pdfCreateURL', async () => {
   expect(res.data.url).toEqual(expect.stringMatching(/^https:\/\/ca-universalwindows.s3.ca-central-1.amazonaws.com\/quote\/qte-1083-r1.pdf/))
 })
 
-test.only('createInvoice', async () => {
+test('createInvoice', async () => {
   const req = {
     field: 'createInvoice',
     arguments: { id: quoteIDCreateInvoice },
@@ -216,4 +216,21 @@ test('persist discount', async () => {
   }
   const res = await Handler(req, cfg)
   expect(res).toBeTruthy()
+})
+
+test.only('nearbyJobs', async () => {
+  const req = {
+    field: 'quoteNearbyJobs',
+    arguments: {
+      input: {
+        // coordinates: [-79.2576469, 43.0095132],
+        coordinates: [-79.2730617, 43.01442460000001],
+        // maxDistance: 1200,
+      },
+    },
+  }
+  const res = await Handler(req, cfg)
+  expect(res).toBeTruthy()
+  expect(res.length).toBeGreaterThan(5)
+  console.log('res.length:', res.length)
 })

@@ -154,6 +154,10 @@ const handlerMap = {
     model: Quote,
     method: 'createInvoice',
   },
+  quoteNearbyJobs: {
+    model: Quote,
+    method: 'nearbyJobs',
+  },
 }
 
 async function Handler(req, cfg) {

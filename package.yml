@@ -23,16 +23,18 @@ Resources:
   Lambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://universal-api-v2/lambda/2f1fb4ea8f178cf88084e6c3ecfe890e
+      CodeUri: s3://universal-api-v2/lambda/96050921f27e847b936d4866eab5f761
       Handler: index.handler
       MemorySize: 1024
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Timeout: 12
       Tracing: Active
       Environment:
         Variables:
           NODE_ENV: production
           Stage: prod
+          thundra_agent_lambda_report_cloudwatch_enable: true
+          thundra_lambda_warmup_warmupAware: true
       Events:
         Api:
           Type: Api

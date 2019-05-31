@@ -18,7 +18,7 @@ const jobSheetNew = {
   addressID: mongoose.Types.ObjectId(addressID),
 }
 const delFailJobSheetID = '5b2122152aac04d9f57ec06f'
-const delJobSheetID = '5c3134d2ea79e17e759c1442'
+const delJobSheetID = '5ce69196ec2d8e7c1cb03dec'
 
 let newID
 
@@ -49,7 +49,7 @@ test('getJobSheetData', async () => {
   expect(res.other.length).toEqual(1)
 })
 
-test.only('jobSheetPersist new with Address', async () => {
+test('jobSheetPersist new with Address', async () => {
   delete jobSheetNew.addressID
   const req = {
     field: 'jobSheetPersist',
@@ -57,7 +57,7 @@ test.only('jobSheetPersist new with Address', async () => {
   }
   const res = await Handler(req)
   newID = res._id
-  console.log('newID:', newID)
+  // console.log('newID:', newID)
   expect(res).toBeTruthy()
 })
 
@@ -81,7 +81,7 @@ test('jobSheetRemove existing', async () => {
   await expect(Handler(req)).rejects.toThrow(/There/)
 })
 
-test('jobSheetRemove existing', async () => {
+test.only('jobSheetRemove ok', async () => {
   const id = mongoose.Types.ObjectId(delJobSheetID)
   const req = {
     field: 'jobSheetRemove',

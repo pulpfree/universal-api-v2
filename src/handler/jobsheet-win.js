@@ -1,5 +1,6 @@
 /* eslint no-underscore-dangle: 0 */
 import JobSheetWindow from '../model/jobsheet-win'
+import Quote from '../model/quote'
 
 function JobSheetWindowHandler() { }
 
@@ -17,7 +18,6 @@ JobSheetWindowHandler.prototype.findOne = async (args) => {
 
 JobSheetWindowHandler.prototype.persist = async (args) => {
   const { input: window } = args
-  // console.log('window:', window)
 
   let winReturn
   try {
@@ -35,6 +35,19 @@ JobSheetWindowHandler.prototype.persist = async (args) => {
 JobSheetWindowHandler.prototype.remove = async (args) => {
   const { id } = args
   let winReturn
+
+  // start by checking if window in existing quote
+  const q = { 'items.window': id }
+  let quoteReturn
+  try {
+    quoteReturn = await Quote.find(q).count()
+  } catch (e) {
+    throw new Error(e)
+  }
+  if (quoteReturn > 0) {
+    throw new Error(`There are ${quoteReturn} quotes using this item.`)
+  }
+
   try {
     winReturn = JobSheetWindow.deleteOne({ _id: id })
   } catch (e) {

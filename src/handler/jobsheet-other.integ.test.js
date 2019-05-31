@@ -10,6 +10,7 @@ import db from '../mongo/connect'
 // occasionally we may want to clear the jest cache: yarn jest --clearCache
 // const jobSheetID = '5b2122152aac04d9f57ec06f'
 const otherID = '5c4dc803ea79e1fdf69c152c'
+const otherDelID = '5ce9a0ec025e199639914f11'
 
 const otherNew = {
   jobsheetID: mongoose.Types.ObjectId('5b2122152aac04d9f57ec06f'),
@@ -90,4 +91,14 @@ test('jobSheetRemoveOther', async () => {
   expect(res).toBeTruthy()
   expect(res.n).toEqual(1)
   expect(res.ok).toEqual(1)
+})
+
+test.only('jobSheetRemoveOther fail', async () => {
+  const req = {
+    field: 'jobSheetRemoveOther',
+    arguments: { id: otherDelID },
+  }
+
+  const res = await Handler(req)
+  expect(res).toThrow()
 })

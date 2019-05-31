@@ -312,4 +312,93 @@ QuoteHandler.prototype.persistDiscount = async (args) => {
   return quoteReturn
 }
 
+QuoteHandler.prototype.nearbyJobs = async (args) => {
+  const { coordinates } = args.input
+  let { maxDistance } = args.input
+  if (!maxDistance) maxDistance = 10000
+
+  const pipeline = [
+    [
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates,
+          },
+          distanceField: 'dist.calculated',
+          maxDistance,
+          spherical: true,
+          query: { associate: 'jobsheet' },
+          includeLocs: 'dist.location',
+        },
+      },
+      {
+        $group: {
+          _id: {
+            location: '$location.coordinates',
+          },
+          city: { $first: '$city' },
+          street1: { $first: '$street1' },
+          postalCode: { $first: '$postalCode' },
+          provinceCode: { $first: '$provinceCode' },
+          customerID: { $first: '$customerID' },
+          dist: { $first: '$dist' },
+          location: { $first: '$location' },
+          addressID: { $first: '$_id' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'quotes',
+          let: { customerID: '$customerID' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$customerID', '$customerID'] },
+                    { $eq: ['$closed', true] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                closed: 1,
+                number: 1,
+              },
+            },
+            { $limit: 1 },
+          ],
+          as: 'quote',
+        },
+      },
+      { $match: { 'quote.closed': true } },
+      { $sort: { 'dist.calculated': 1 } },
+      { $limit: 10 },
+      { $unwind: { path: '$quote' } },
+    ],
+  ]
+
+  let res
+  try {
+    res = await Address.aggregate(pipeline)
+  } catch (e) {
+    throw new Error(e)
+  }
+
+  // loop through and create a cleanup address
+  // destructuring would be nice here, but doesn't work with node10, (I'm assuming)
+  const addresses = res.map((doc) => {
+    doc._id = doc.addressID // eslint-disable-line no-param-reassign
+    delete doc.addressID // eslint-disable-line no-param-reassign
+    delete doc.quote // eslint-disable-line no-param-reassign
+    return doc
+  })
+  // console.log('addresses:', addresses)
+
+  return addresses
+}
+
 module.exports = QuoteHandler

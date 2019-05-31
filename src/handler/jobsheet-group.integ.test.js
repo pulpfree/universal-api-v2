@@ -11,6 +11,7 @@ import db from '../mongo/connect'
 // occasionally we may want to clear the jest cache: yarn jest --clearCache
 
 const groupID = '5b195db0c2e75ffe21fdd0ed'
+const groupDelID = '5ce99fdd025e19724c914f0b'
 
 const groupNew = {
   jobsheetID: mongoose.Types.ObjectId('5b1846d52aac0450227ebfe9'),
@@ -213,4 +214,14 @@ test('jobSheetRemoveGroup', async () => {
   expect(res).toBeTruthy()
   expect(res.n).toEqual(1)
   expect(res.ok).toEqual(1)
+})
+
+test.only('jobSheetRemoveGroup fail', async () => {
+  const req = {
+    field: 'jobSheetRemoveGroup',
+    arguments: { id: groupDelID },
+  }
+
+  const res = await Handler(req)
+  expect(res).toThrow()
 })

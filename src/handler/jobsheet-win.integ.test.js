@@ -11,6 +11,7 @@ import db from '../mongo/connect'
 // eslint 'src/handler/jobsheet-win.integ.test.js' --fix
 
 const windowID = '5b18474a2aac045b127ebfeb'
+const windowDelID = '5ced4088312ca500078a292c'
 const jobSheetID = '5b1846d52aac0450227ebfe9'
 
 const windowUpdate = {
@@ -151,4 +152,16 @@ test('jobSheetRemoveWindow', async () => {
   expect(res).toBeTruthy()
   expect(res.n).toEqual(1)
   expect(res.ok).toEqual(1)
+})
+
+test.only('jobSheetRemoveWindow error', async () => {
+  const req = {
+    field: 'jobSheetRemoveWindow',
+    arguments: { id: windowDelID },
+  }
+
+  const res = await Handler(req)
+  expect(res).toBeTruthy()
+  // expect(res.n).toEqual(1)
+  // expect(res.ok).toEqual(1)
 })

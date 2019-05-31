@@ -1,7 +1,7 @@
 /* eslint no-underscore-dangle: 0 */
-// import mongoose from 'mongoose'
 
-const JobSheetOther = require('../model/jobsheet-other')
+import JobSheetOther from '../model/jobsheet-other'
+import Quote from '../model/quote'
 
 function JobSheetOtherHandler() { }
 
@@ -48,6 +48,19 @@ JobSheetOtherHandler.prototype.persist = async (args) => {
 JobSheetOtherHandler.prototype.remove = async (args) => {
   const { id } = args
   let otherReturn
+
+  // start by checking if window in existing quote
+  const q = { 'items.other': id }
+  let quoteReturn
+  try {
+    quoteReturn = await Quote.find(q).count()
+  } catch (e) {
+    throw new Error(e)
+  }
+  if (quoteReturn > 0) {
+    throw new Error(`There are ${quoteReturn} quotes using this item.`)
+  }
+
   try {
     otherReturn = JobSheetOther.deleteOne({ _id: id })
   } catch (e) {

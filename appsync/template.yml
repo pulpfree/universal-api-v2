@@ -50,11 +50,27 @@ Resources:
           country: String
           countryCode: String
           customerID: ID
+          location: Location
           postalCode: String
           provinceCode: String
           street1: String
           street2: String
           type: String
+        }
+        type AddressGeo {
+          _id: ID!
+          city: String
+          customerID: ID
+          location: Location
+          postalCode: String
+          provinceCode: String
+          street1: String
+          dist: GeoDistance
+        }
+
+        type GeoDistance {
+          calculated: Float
+          location: Location
         }
 
         type Location {
@@ -401,6 +417,10 @@ Resources:
           quotePrice: QuotePriceInput
           version: Int
         }
+        input AddressGeoInput {
+          maxDistance: Int
+          coordinates: [Float]
+        }
         input QuoteDiscountInput {
           _id: ID!
           discount: DiscountInput!
@@ -624,6 +644,7 @@ Resources:
           searchQuotes(year: String, invoiced: Boolean, closed: Boolean): Quotes
           searchQuotesByCustomer(customerID: ID!): Quotes
           pdfSignedURL(input: SignedURLInput!): PDFSignedURL
+          quoteNearbyJobs(input: AddressGeoInput): [AddressGeo]
           
           jobSheetData(jobSheetID: ID!): JobSheetData
           jobSheetWindow(windowID: ID!): JobSheetWindow
@@ -812,6 +833,25 @@ Resources:
           "operation": "Invoke",
           "payload": {
             "field": "searchQuotes",
+            "arguments": $utils.toJson($context.arguments)
+          }
+        }
+      ResponseMappingTemplate: $util.toJson($context.result)
+
+  AppSyncResolverQuoteNearbyJobs:
+    Type: AWS::AppSync::Resolver
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: quoteNearbyJobs
+      DataSourceName: !GetAtt AppSyncDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": {
+            "field": "quoteNearbyJobs",
             "arguments": $utils.toJson($context.arguments)
           }
         }
