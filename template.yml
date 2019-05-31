@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Universal AppSync Lambda Resolver Function
+
+Parameters:
+  ParamProjectName:
+    Type: String
+    Description: Name of the API - used to generate unique names for resources
+    MinLength: 3
+    MaxLength: 20
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9_-]*$'
+  ParamAccountId:
+    Type: String
+    Description: Account ID
+  ParamSSMPath:
+    Type: String
+    Description: Second path part in ssmParams
+    Default: universal-api
+  ParamENV:
+    Type: String
+  ParamAppBucket:
+    Type: String
+
+Resources:
+
+  Lambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./build
+      Handler: index.handler
+      MemorySize: 1024
+      Runtime: nodejs10.x
+      Timeout: 12
+      Tracing: Active
+      Environment:
+        Variables:
+          NODE_ENV: production
+          Stage: prod
+          thundra_agent_lambda_report_cloudwatch_enable: true
+          thundra_lambda_warmup_warmupAware: true
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: any
+      Role: !GetAtt LambdaRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-5afb2932
+          - sg-8f6baee7
+        SubnetIds:
+          - subnet-0da8d176
+          - subnet-7f092816
+      Tags:
+        BillTo: 'Universal'
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ParamProjectName}-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+      Policies:
+      - PolicyName: FunctionParameterAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - ssm:GetParametersByPath
+            Effect: Allow
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${ParamAccountId}:parameter/${ParamENV}/${ParamSSMPath}*
+      - PolicyName: FunctionLogAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+      - PolicyName: FunctionXRayAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+            Effect: Allow
+            Resource: '*'
+      - PolicyName: FunctionVPCAccess
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DeleteNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            Effect: Allow
+            Resource: '*'
+      - PolicyName: FunctionS3Access
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Action:
+            - s3:*
+            Effect: Allow
+            Resource: arn:aws:s3:::*
+            # Resource: 
+              # Fn::Sub: arn:aws:s3:::${ParamAppBucket}/*
+
+Outputs:
+  LambdaARN:
+    Description: The Lambda Arn
+    Value: !GetAtt Lambda.Arn
