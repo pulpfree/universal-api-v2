@@ -16,7 +16,7 @@ const url = 'mongodb://192.168.86.24:27017'
 const dbName = 'universal-sales'
 const mongoClient = new MongoClient(url)
 
-const GoogleAPIKey = 'AIzaSyCwdYmAD3lXNUA7VOE7WnnelwudTDdnRD8'
+const GoogleAPIKey = ''
 const options = {
   provider: 'google',
 
